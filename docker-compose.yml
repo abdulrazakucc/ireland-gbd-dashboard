@@ -1,0 +1,15 @@
+services:
+  # One service serves both the dashboard and the API on port 8000.
+  # http://localhost:8000/       -> dashboard
+  # http://localhost:8000/api/.. -> JSON API
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount the data dir so re-running the ETL on the host refreshes
+      # the container's data without a rebuild (dev convenience).
+      - ./data:/srv/data
+      # Mount the frontend so dashboard edits show on refresh, no rebuild.
+      - ./static:/srv/static
+    restart: unless-stopped

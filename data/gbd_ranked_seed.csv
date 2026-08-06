@@ -1,0 +1,20 @@
+rank_type,label,location,year,value,unit,gbd_round
+causes,Anxiety disorders,Ireland,2023,1301.7,DALYs per 100000,GBD 2023
+causes,Falls,Ireland,2023,1109.9,DALYs per 100000,GBD 2023
+causes,Low back pain,Ireland,2023,1069.6,DALYs per 100000,GBD 2023
+causes,Ischemic heart disease,Ireland,2023,1066.2,DALYs per 100000,GBD 2023
+causes,Depressive disorders,Ireland,2023,672.5,DALYs per 100000,GBD 2023
+causes,Drug use disorders,Ireland,2023,469.4,DALYs per 100000,GBD 2023
+causes,Headache disorders,Ireland,2023,670.6,DALYs per 100000,GBD 2023
+causes,Lung cancer,Ireland,2023,619.8,DALYs per 100000,GBD 2023
+causes,COPD,Ireland,2023,493.8,DALYs per 100000,GBD 2023
+causes,Self-harm,Ireland,2023,323.1,DALYs per 100000,GBD 2023
+risks,Tobacco,Ireland,2023,7.7,percent of all-cause DALYs,GBD 2023
+risks,High body-mass index,Ireland,2023,6.6,percent of all-cause DALYs,GBD 2023
+risks,High systolic blood pressure,Ireland,2023,6.5,percent of all-cause DALYs,GBD 2023
+risks,Dietary risks,Ireland,2023,5.8,percent of all-cause DALYs,GBD 2023
+risks,High fasting plasma glucose,Ireland,2023,4.8,percent of all-cause DALYs,GBD 2023
+risks,High alcohol use,Ireland,2023,3.3,percent of all-cause DALYs,GBD 2023
+risks,Occupational risks,Ireland,2023,2.9,percent of all-cause DALYs,GBD 2023
+risks,High LDL cholesterol,Ireland,2023,2.5,percent of all-cause DALYs,GBD 2023
+risks,Kidney dysfunction,Ireland,2023,2.7,percent of all-cause DALYs,GBD 2023

@@ -25,7 +25,8 @@ APP_URL   := http://127.0.0.1:$(PORT)
 
 .PHONY: help setup setup-dev seed reseed run stop restart status smoke open logs \
         test lint format check up down docker-restart docker-logs docker-ps \
-        refresh clean distclean wait-api
+        refresh clean distclean wait-api \
+        dev install start urls doctor
 
 # Poll until the API answers, rather than guessing how long startup takes.
 # Deliberately not `curl --retry`: that gives up on a connection reset, which
@@ -43,7 +44,12 @@ help: ## Show this help
 	@echo ""
 	@echo "  Ireland Health Evidence -- UCC School of Public Health"
 	@echo ""
-	@echo "  First time here?  make setup && make run"
+	@echo -e "  \033[1mNever run this before?  Type:  make dev\033[0m"
+	@echo "  That installs everything, loads the data, and opens the dashboard."
+	@echo ""
+	@echo "  Shortcuts:"
+	@grep -E '^(dev|install|start|doctor|urls):.*## ' $(MAKEFILE_LIST) \
+		| awk 'BEGIN{FS=":.*?## "}{printf "    \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 	@echo ""
 	@echo "  Run the app (local, using .venv):"
 	@grep -E '^(setup|setup-dev|seed|reseed|run|stop|restart|status|open|logs):.*## ' $(MAKEFILE_LIST) \
@@ -60,6 +66,51 @@ help: ## Show this help
 	@echo "  Data and housekeeping:"
 	@grep -E '^(refresh|clean|distclean):.*## ' $(MAKEFILE_LIST) \
 		| awk 'BEGIN{FS=":.*?## "}{printf "    \033[36m%-15s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+
+## ---------------------------------------------------------- shortcuts ----
+# Friendly aliases. These exist because "install" and "start" are the words
+# most people reach for first, and because a newcomer should not have to know
+# that setting up, loading data, and starting are three separate steps.
+
+dev: setup seed run open ## EVERYTHING: install, load data, start, open browser
+
+install: setup ## Alias for `make setup`
+
+start: run ## Alias for `make run`
+
+urls: ## Print the addresses the app serves on
+	@echo ""
+	@echo "    Dashboard  $(APP_URL)"
+	@echo "    JSON API   $(APP_URL)/api"
+	@echo "    API docs   $(APP_URL)/docs"
+	@echo ""
+
+doctor: ## Check this machine has what the project needs
+	@echo ""
+	@echo "==> Checking your setup"
+	@printf "    %-22s" "Python 3.11+"
+	@if command -v python3 >/dev/null 2>&1; then \
+		v=$$(python3 -c 'import sys; print("%d.%d" % sys.version_info[:2])'); \
+		ok=$$(python3 -c 'import sys; print(sys.version_info[:2] >= (3, 11))'); \
+		if [ "$$ok" = "True" ]; then echo "ok (found $$v)"; \
+		else echo "TOO OLD (found $$v) -- install 3.11 or newer from python.org"; fi; \
+	else echo "MISSING -- install it from python.org"; fi
+	@printf "    %-22s" "make"
+	@command -v make >/dev/null 2>&1 && echo "ok" || echo "MISSING"
+	@printf "    %-22s" "curl"
+	@command -v curl >/dev/null 2>&1 && echo "ok" || echo "MISSING (needed by: make smoke)"
+	@printf "    %-22s" "Docker (optional)"
+	@if docker info >/dev/null 2>&1; then echo "ok and running"; \
+	elif command -v docker >/dev/null 2>&1; then echo "installed but not running -- only needed for: make up"; \
+	else echo "not installed -- only needed for: make up"; fi
+	@printf "    %-22s" "Virtual environment"
+	@if [ -f $(VENV)/.installed ]; then echo "ok ($(VENV))"; else echo "not created yet -- run: make setup"; fi
+	@printf "    %-22s" "Database"
+	@if [ -f $(DB) ]; then echo "ok ($(DB))"; else echo "not built yet -- run: make seed"; fi
+	@printf "    %-22s" "Port $(PORT)"
+	@if lsof -nP -iTCP:$(PORT) -sTCP:LISTEN >/dev/null 2>&1; then \
+		echo "IN USE -- see: make status"; else echo "free"; fi
 	@echo ""
 
 ## ------------------------------------------------------------ the app ----

@@ -20,8 +20,10 @@ Senior Lecturer, School of Public Health, University College Cork.
 ## Table of contents
 
 - [What this is](#what-this-is)
+- [Before you start](#before-you-start)
 - [Quick start](#quick-start)
 - [All commands](#all-commands)
+- [Everyday recipes](#everyday-recipes)
 - [Repository structure](#repository-structure)
 - [What each directory is for](#what-each-directory-is-for)
 - [How it works](#how-it-works)
@@ -55,21 +57,98 @@ database. The **API-to-IHME** link is a scheduled ingest, because that is how
 GBD is actually published (see
 [What "live" honestly means](#what-live-honestly-means)).
 
-New to the project? You only need two commands: `make setup` then `make run`.
+New to the project? You only need **one** command: `make dev`.
+
+## Before you start
+
+You need three things, and you probably already have all of them:
+
+| | Why | Check it |
+|---|---|---|
+| **Python 3.11 or newer** | Runs the application | `python3 --version` |
+| **`make`** | Runs every command in this project | `make --version` |
+| **`curl`** | Used by `make smoke` | `curl --version` |
+
+Docker is **optional** — only needed if you prefer `make up` over running
+locally.
+
+<details>
+<summary><b>Don't have them? (click to expand)</b></summary>
+
+- **macOS** — Python: [python.org/downloads](https://www.python.org/downloads/)
+  or `brew install python`. `make` and `curl` come with Xcode Command Line
+  Tools: `xcode-select --install`.
+- **Windows** — install [Python](https://www.python.org/downloads/) ticking
+  *"Add python.exe to PATH"*, then use **WSL** (Ubuntu) or **Git Bash** so that
+  `make` is available. In WSL: `sudo apt install make curl`.
+- **Linux** — `sudo apt install python3 python3-venv make curl`.
+
+</details>
+
+**One command checks all of it for you**, and tells you exactly what is missing
+and how to fix it:
+
+```bash
+make doctor
+```
+
+```
+==> Checking your setup
+    Python 3.11+          ok (found 3.12)
+    make                  ok
+    curl                  ok
+    Docker (optional)     ok and running
+    Virtual environment   not created yet -- run: make setup
+    Database              not built yet -- run: make seed
+    Port 8000             free
+```
+
+### Getting into the project folder
+
+Every command below must be run **from inside the project folder**. Open a
+terminal and change into it first:
+
+```bash
+cd path/to/ucc_gbd_pipeline
+```
+
+You are in the right place if `ls` shows a `Makefile`.
 
 ## Quick start
 
-**Option A — Docker** (nothing to install but Docker):
+### The one-command version
 
 ```bash
-make up
+make dev
 ```
 
-**Option B — locally** (needs Python 3.11 or newer):
+That does everything: creates the virtual environment, installs dependencies,
+builds the database, starts the app, and opens the dashboard in your browser.
+It takes about a minute the first time and a few seconds afterwards.
+
+When you are finished:
 
 ```bash
-make setup     # create .venv and install pinned dependencies
-make run       # start the app
+make stop
+```
+
+### Or step by step
+
+If you would rather see each stage, the same thing in three commands:
+
+```bash
+make setup     # 1. create .venv and install pinned dependencies
+make seed      # 2. build the database from the seed CSVs
+make run       # 3. start the app
+```
+
+### Or in Docker
+
+Nothing to install but Docker itself — no Python, no virtual environment:
+
+```bash
+make up        # build and start
+make down      # stop
 ```
 
 Either way, **one process serves everything on one port**:
@@ -87,8 +166,24 @@ To stop: `make down` (Docker) or `make stop` (local).
 
 ## All commands
 
-Every command lives in the [`Makefile`](Makefile). Run `make` on its own to
-print this list in your terminal.
+Every command lives in the [`Makefile`](Makefile). **Run `make` on its own** to
+print this list in your terminal at any time — you never have to remember it.
+
+You always type `make` followed by the name, e.g. `make run`. Order does not
+matter: each command sets up whatever it needs first. `make run` will build the
+database if it is missing; `make test` will install the test tools if they are
+not there.
+
+### Shortcuts — the four worth remembering
+
+| Command | What it does |
+|---|---|
+| **`make dev`** | **Everything at once**: install, build the database, start, open the browser. Use this the first time. |
+| `make start` | Start the app (a friendlier name for `make run`) |
+| `make doctor` | Check this machine has what the project needs |
+| `make urls` | Print the addresses the app serves on |
+
+`make install` also works, as another name for `make setup`.
 
 ### Running the app locally
 
@@ -132,6 +227,47 @@ print this list in your terminal.
 | `make refresh` | Ingest the newest GBD export from `data/incoming/` |
 | `make clean` | Remove the database, logs, and caches (keeps `.venv`) |
 | `make distclean` | Also remove `.venv` |
+
+## Everyday recipes
+
+Find what you want to do, then run the command beside it.
+
+| I want to… | Command |
+|---|---|
+| Run it for the very first time | `make dev` |
+| Start it again tomorrow | `make start` |
+| Stop it | `make stop` |
+| See it in my browser | `make open` |
+| Find out which address it is on | `make urls` |
+| Check whether it is actually working | `make smoke` |
+| See what the app is doing right now | `make logs` *(press `Ctrl+C` to stop watching)* |
+| Find out why it will not start | `make doctor`, then `make status` |
+| Pick up my changes to `index.html` | Just refresh the browser — no restart needed |
+| Pick up my changes to Python code | `make restart` |
+| Load a new GBD export | Put the CSV in `data/incoming/`, then `make refresh` |
+| Rebuild the database from scratch | `make reseed` |
+| Check my changes did not break anything | `make check` |
+| Tidy up formatting before committing | `make format` |
+| Start completely fresh | `make distclean` then `make dev` |
+
+### A first session, start to finish
+
+```bash
+cd path/to/ucc_gbd_pipeline
+
+make doctor        # confirm this machine is ready
+make dev           # install, build, start, open browser
+make smoke         # confirm every endpoint answers
+
+# ... use the dashboard at http://127.0.0.1:8000 ...
+
+make stop          # finished for now
+```
+
+> **A note on `make run` and `make up`.** They do the same thing by different
+> routes, and both use **port 8000** — so only one can run at a time. If you
+> started with `make up` (Docker), stop it with `make down` before using
+> `make run`, and vice versa. `make status` always tells you which is running.
 
 ## Repository structure
 

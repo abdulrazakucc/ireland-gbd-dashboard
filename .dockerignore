@@ -1,0 +1,16 @@
+# Keep the build context small and the image clean.
+.venv/
+venv/
+.run/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.git/
+.github/
+.DS_Store
+tests/
+brand/
+data/gbd.db
+data/incoming/*
+!data/incoming/.gitkeep

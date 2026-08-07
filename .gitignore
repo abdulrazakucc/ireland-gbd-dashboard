@@ -1,0 +1,23 @@
+# Virtual environment -- recreate with: make setup
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Local process state (PID and log from `make run`)
+.run/
+
+# Database built by the ETL -- regenerate with: make seed
+data/gbd.db
+
+# GBD Results Tool exports: large, and redistribution is governed by IHME's
+# data terms. Keep them out of version control.
+data/incoming/*
+!data/incoming/.gitkeep
+
+# macOS
+.DS_Store

@@ -1,15 +1,24 @@
+# One service serves both halves of the product on a single port.
+#   http://localhost:8000/        the dashboard
+#   http://localhost:8000/api/..  the JSON API
+#
+# Start with: make up      Stop with: make down
+
 services:
-  # One service serves both the dashboard and the API on port 8000.
-  # http://localhost:8000/       -> dashboard
-  # http://localhost:8000/api/.. -> JSON API
   app:
     build: .
+    image: ucc-gbd-dashboard:latest
+    container_name: ucc-gbd-app
     ports:
       - "8000:8000"
+    environment:
+      # The database lives in the mounted data volume, so the container and
+      # the host share one file: `make refresh` on the host is visible here
+      # without a rebuild.
+      GBD_DB_PATH: /srv/data/gbd.db
     volumes:
-      # Mount the data dir so re-running the ETL on the host refreshes
-      # the container's data without a rebuild (dev convenience).
       - ./data:/srv/data
-      # Mount the frontend so dashboard edits show on refresh, no rebuild.
-      - ./static:/srv/static
+      # Read-only: the dashboard is served, never written to. Mounting it means
+      # frontend edits show on refresh with no rebuild.
+      - ./static:/srv/static:ro
     restart: unless-stopped

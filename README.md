@@ -1,79 +1,129 @@
 <div align="center">
 
-# Ireland GBD Dashboard
+# Ireland Health Evidence
 
-**A live ETL → API → dashboard pipeline for Global Burden of Disease indicators for Ireland**
+**A working ETL → API → dashboard pipeline for Global Burden of Disease indicators for Ireland**
 
 School of Public Health · University College Cork · Cork, Ireland
 
-`FastAPI` · `SQLite` · `pandas` · `Docker`
+`Python 3.11+` · `FastAPI` · `SQLite` · `Docker` · `no build step`
 
 </div>
 
 ---
 
-A real, working pipeline serving Global Burden of Disease indicators for
-Ireland. This replaces the earlier static-HTML prototype
-(`ireland_gbd_dashboard.html`) with a genuine backend serving live queries.
-
-Tested end to end: the ETL loads real data, the API serves it, and the
-dashboard renders from live HTTP calls — not embedded JavaScript arrays.
-
-**Principal Investigator** — Dr. Zubair Kabir, Senior Lecturer,
-School of Public Health, University College Cork.
+**Principal Investigator** — [Dr. Zubair Kabir](https://research.ucc.ie/en/persons/zubair-kabir/),
+Senior Lecturer, School of Public Health, University College Cork.
 
 ---
 
+## Table of contents
+
+- [What this is](#what-this-is)
+- [Quick start](#quick-start)
+- [All commands](#all-commands)
+- [Repository structure](#repository-structure)
+- [What each directory is for](#what-each-directory-is-for)
+- [How it works](#how-it-works)
+- [The API](#the-api)
+- [The dashboard](#the-dashboard)
+- [Loading real GBD data](#loading-real-gbd-data)
+- [Testing and code quality](#testing-and-code-quality)
+- [Deployment](#deployment)
+- [Configuration](#configuration)
+- [Troubleshooting](#troubleshooting)
+- [Data governance and attribution](#data-governance-and-attribution)
+
+---
+
+## What this is
+
+Three pieces that fit together:
+
+```
+   IHME GBD export                  SQLite                     Browser
+   (annual bulk CSV)                database
+        │                              │                          │
+        │   etl/load_seed.py           │   app/ (FastAPI)         │
+        └─────────────────────────────►│◄─────────────────────────┘
+              ingest, once per round        live HTTP on every page load
+```
+
+The **dashboard-to-API** link is genuinely live: the page holds no data of its
+own, and every number on screen comes from an HTTP request answered from the
+database. The **API-to-IHME** link is a scheduled ingest, because that is how
+GBD is actually published (see
+[What "live" honestly means](#what-live-honestly-means)).
+
+New to the project? You only need two commands: `make setup` then `make run`.
+
 ## Quick start
 
-Everything runs through `make`. Run `make` on its own for the full list.
+**Option A — Docker** (nothing to install but Docker):
 
 ```bash
-make up          # Docker: build and start everything
+make up
 ```
+
+**Option B — locally** (needs Python 3.11 or newer):
 
 ```bash
-make setup       # Local: create .venv and install dependencies
-make run         # Local: start the app
+make setup     # create .venv and install pinned dependencies
+make run       # start the app
 ```
 
-Either way, one process serves everything on **one port** — no separate
-frontend server, no HTML file to open by hand:
+Either way, **one process serves everything on one port**:
 
 | | |
 |---|---|
-| **Dashboard** | http://127.0.0.1:8000 |
-| **JSON API** | http://127.0.0.1:8000/api/... |
-| **Interactive API docs** | http://127.0.0.1:8000/docs |
+| **Dashboard** | <http://127.0.0.1:8000> |
+| **JSON API** | <http://127.0.0.1:8000/api/...> |
+| **Interactive API docs** | <http://127.0.0.1:8000/docs> |
 
-Confirm it is all working with `make smoke`.
+There is no separate frontend server and no HTML file to open by hand. Confirm
+everything is working with `make smoke`.
 
-## Commands
+To stop: `make down` (Docker) or `make stop` (local).
 
-### Local development (virtual environment)
+## All commands
+
+Every command lives in the [`Makefile`](Makefile). Run `make` on its own to
+print this list in your terminal.
+
+### Running the app locally
 
 | Command | What it does |
 |---|---|
-| `make setup` | Create `.venv` and install the pinned dependencies |
-| `make seed` | Build `app/gbd.db` from the seed CSVs (skipped if up to date) |
-| `make reseed` | Rebuild the database from scratch |
-| `make run` | Start the app (dashboard + API) in the background |
-| `make stop` | Stop it again |
+| `make setup` | Create `.venv` and install runtime dependencies |
+| `make setup-dev` | Also install test and lint tools |
+| `make seed` | Build the database from the seed CSVs (skipped if up to date) |
+| `make reseed` | Delete and rebuild the database from scratch |
+| `make run` | Start the app in the background |
+| `make stop` | Stop it |
 | `make restart` | Stop, then start |
-| `make status` | Show what is listening on `:8000` |
-| `make smoke` | Check that every API endpoint answers |
-| `make logs` | Follow the app log |
+| `make status` | Show what is listening on the port |
 | `make open` | Open the dashboard in a browser |
+| `make logs` | Follow the app log |
 
-### Docker
+### Running the app in Docker
 
 | Command | What it does |
 |---|---|
-| `make up` | Build and start the container |
+| `make up` | Build the image and start the container |
 | `make down` | Stop and remove it (frees the port) |
 | `make docker-restart` | Rebuild and restart |
-| `make docker-logs` | Follow the container logs |
-| `make docker-ps` | Show container status |
+| `make docker-logs` | Follow the container log |
+| `make docker-ps` | Show container status and health |
+
+### Quality checks
+
+| Command | What it does |
+|---|---|
+| `make test` | Run the test suite |
+| `make lint` | Check code style and formatting |
+| `make format` | Auto-fix formatting and import order |
+| `make smoke` | Check a **running** app answers on every endpoint |
+| `make check` | `lint` + `test` — exactly what CI runs |
 
 ### Data and housekeeping
 
@@ -83,195 +133,356 @@ Confirm it is all working with `make smoke`.
 | `make clean` | Remove the database, logs, and caches (keeps `.venv`) |
 | `make distclean` | Also remove `.venv` |
 
-> **Port in use?** `make stop` shuts down the local process; `make down`
-> shuts down the container. Use `make status` to see which of the two is
-> holding port 8000 — killing a PID from `lsof` while Docker is running
-> fights the Docker proxy rather than stopping the container.
+## Repository structure
 
-## The dashboard
-
-A single self-contained page, `static/index.html`, with no build step
-and no external requests — Chart.js is vendored into `static/assets/`, so the
-dashboard works on an air-gapped or restricted network.
-
-- **UCC identity** — logo top left; principal investigator top right, with
-  photograph and a link through to the
-  [UCC research profile](https://research.ucc.ie/en/persons/zubair-kabir/).
-- **Hero figure and stat tiles** — life expectancy leads; healthy life
-  expectancy, tobacco, BMI, and air pollution follow with sparklines and
-  change-since-baseline, all computed from live API responses.
-- **Republic of Ireland outline** — Natural Earth 10m boundary, projected and
-  simplified to a 138-point inline SVG (no image request), used as a masthead
-  watermark and a location chip.
-- **Light and dark themes** — follows the OS by default, with a toggle that
-  persists the choice.
-- **Table view on every chart** — each chart has a toggle to the same data as
-  an accessible table, so no value is reachable only by hovering.
-
-**On the chart colours.** The series palette is not hand-picked. It uses
-validated categorical slots checked in both themes for lightness band, chroma
-floor, colour-vision-deficiency separation (protanopia/deuteranopia, Machado
-2009 at full severity), a normal-vision separation floor, and contrast against
-the surface. Two light-mode hues sit below the 3:1 contrast line, which is only
-permitted alongside a relief channel — hence the visible value labels and the
-table views. UCC navy and gold are chrome only; they never encode data.
-
-If you change a series colour, re-validate it rather than eyeballing it — a
-palette that merely *looks* distinct routinely collapses under CVD simulation.
-
-## Why a virtual environment
-
-`requirements.txt` pins exact versions (FastAPI 0.115, pandas 2.2) because
-those are what this pipeline is tested against. A venv keeps them isolated
-from the system Python and from every other project on the machine, so a
-reviewer or a new researcher gets exactly the tested environment — and
-reproducing a result years from now stays possible.
-
-`make setup` handles it. If you prefer to work in the environment directly:
-
-```bash
-source .venv/bin/activate      # Windows: .venv\Scripts\activate
-deactivate                     # when you are done
+```
+ucc_gbd_pipeline/
+│
+├── app/                          The web application (API + serves the dashboard)
+│   ├── __init__.py
+│   ├── config.py                 Every path and setting, resolved once
+│   ├── db.py                     SQLite access helpers
+│   ├── schemas.py                Response models -> these generate /docs
+│   ├── routes.py                 The /api routes
+│   └── main.py                   App factory; mounts the dashboard at /
+│
+├── etl/                          Getting data INTO the database
+│   ├── __init__.py
+│   └── load_seed.py              Seed loader + real GBD Results Tool adapter
+│
+├── data/                         All data lives here (never in the code dirs)
+│   ├── gbd_seed.csv              Prototype seed data: trend indicators
+│   ├── gbd_ranked_seed.csv       Prototype seed data: top causes and risks
+│   ├── gbd.db                    SQLite database — BUILT, not committed
+│   └── incoming/                 Drop new GBD Results Tool exports here
+│
+├── static/                       The frontend, served at /
+│   ├── index.html                The whole dashboard: one file, no build step
+│   └── assets/
+│       ├── ucc-logo.png          Cropped, web-sized UCC logo
+│       ├── zubair-kabir.png      Principal investigator photograph
+│       └── chart.umd.js          Chart.js, vendored — no CDN dependency
+│
+├── tests/                        Test suite (pytest)
+│   ├── conftest.py               Shared fixtures; builds a temporary database
+│   ├── test_api.py               Every endpoint's contract
+│   └── test_etl.py               Ingest correctness and idempotency
+│
+├── scripts/
+│   └── refresh.sh                Scheduled re-ingestion (cron-friendly)
+│
+├── docker/
+│   └── entrypoint.sh             Seeds the database on first container start
+│
+├── brand/                        Original high-resolution identity assets
+│   ├── ucc-logo.png              Source logo (the web copy is in static/assets)
+│   └── zubair-kabir.png          Source photograph
+│
+├── .github/workflows/
+│   └── ci.yml                    Lint, test, and a real container build
+│
+├── Makefile                      Every command for this project
+├── Dockerfile                    Container image definition
+├── docker-compose.yml            One service, one port
+├── requirements.txt              Runtime dependencies, pinned
+├── requirements-dev.txt          Test and lint dependencies, pinned
+├── pyproject.toml                ruff and pytest configuration
+├── .gitignore                    Build artefacts and licensed data stay out
+├── .dockerignore                 Keeps the image small and clean
+└── README.md                     This file
 ```
 
-`.venv/` is disposable and git-ignored — delete and recreate it any time.
-The Docker path needs no venv; a container is already an isolated
-environment.
+## What each directory is for
 
-## What is actually "live" here — an honest note
+### `app/` — the web application
+
+The API and the dashboard are served by **one** FastAPI application on **one**
+port. The package is split by responsibility so each file has one job:
+
+| File | Responsibility |
+|---|---|
+| `config.py` | The single source of truth for **where things are**. Nothing else in the codebase works out a path by walking `__file__`. Every path can be overridden with an environment variable, which is how Docker and the tests point the app elsewhere without editing code. |
+| `db.py` | Opening SQLite connections and running queries. If this project ever moves to Postgres, **this is the only file that changes**. |
+| `schemas.py` | Pydantic models describing every response. They document the API at `/docs`, give the frontend a contract, and make a shape change fail loudly in tests. |
+| `routes.py` | The `/api` endpoints. Thin: each one is a query plus a little shaping. |
+| `main.py` | Builds the application — middleware, routes, and the static mount. |
+
+**One ordering rule matters here.** The dashboard is mounted at `/`, which is a
+catch-all. FastAPI matches routes in declaration order, so the `/api` router is
+registered **before** the static mount. Reverse them and every API call would
+return the HTML page instead. `tests/test_api.py` guards this.
+
+### `etl/` — getting data in
+
+`load_seed.py` has two entry points:
+
+- **`load_seed()`** loads the bundled CSVs in `data/`. This is what runs
+  automatically the first time you start the app, so there is always something
+  to look at.
+- **`ingest_gbd_export()`** is the adapter for a real IHME bulk export. It maps
+  the Results Tool's column names onto the same tables, so **neither the API
+  nor the dashboard changes** when you switch from seed data to real data.
+
+Both are idempotent: the tables use composite primary keys, so re-running the
+ETL replaces rows rather than duplicating them. `make refresh` can safely run
+on a schedule.
+
+### `data/` — everything that is data
+
+Kept strictly separate from code. The seed CSVs are committed because they are
+small and make the project runnable on a fresh clone. Two things are **not**
+committed:
+
+- `gbd.db` is a build artefact. Regenerate it any time with `make seed`.
+- `incoming/*.csv` are IHME exports — large, and their redistribution is
+  governed by IHME's data terms.
+
+### `static/` — the frontend
+
+One self-contained `index.html`. No build step, no `npm install`, no bundler:
+open it and it works. Chart.js is **vendored** into `assets/` rather than
+loaded from a CDN, so the dashboard works on a restricted or air-gapped
+network and cannot break because someone else's CDN changed.
+
+### `tests/` — the safety net
+
+`pytest`, run with `make test`. Tests build their own temporary database from
+the real CSVs, so running them can never disturb a database you are using.
+
+### `scripts/` and `docker/`
+
+`scripts/refresh.sh` is the scheduled re-ingestion job, safe to run from cron.
+`docker/entrypoint.sh` seeds the database on first container start — needed
+because the database lives in the mounted volume, which would otherwise hide a
+copy baked in at build time.
+
+### `brand/` — source assets
+
+Original high-resolution identity files. The versions actually served live in
+`static/assets/`, cropped and sized for the web. Keeping the originals means
+the web copies can be regenerated without hunting for the source again.
+
+## How it works
+
+### One process, one port
+
+Early versions ran the API on `:8000` and a separate static file server on
+`:8080`. That meant two processes, two ports, cross-origin requests, and a
+dashboard that lived at a URL ending in `.html`. Visiting the port root gave
+you a **directory listing**.
+
+Now a single FastAPI process serves both. The benefits are practical: one
+thing to start, one port to open in a firewall, no CORS round-trip, and
+nothing to reconfigure when the app moves behind a UCC hostname — the frontend
+calls its own origin.
+
+### Where the database lives
+
+`data/gbd.db`, which is **inside the volume mounted into the container**. That
+is deliberate: the host and the container share one file, so running
+`make refresh` on the host is visible to the running container immediately.
+
+The trade-off is that a database baked into the image at build time would be
+hidden by that mount. `docker/entrypoint.sh` handles it: on start, if the file
+is not there, it seeds from the bundled CSVs and then hands over to uvicorn.
+A fresh `git clone` plus `make up` therefore gives a working dashboard with no
+manual step.
+
+### What "live" honestly means
 
 IHME does not offer a free, real-time, arbitrary-query REST API for GBD
-estimates. GBD is released in **annual rounds** (GBD 2021, GBD 2023, …),
-distributed as **bulk CSV exports** via the
-[GBD Results Tool](https://vizhub.healthdata.org/gbd-results/). So "live" in
-a responsible, honest sense means:
+estimates. GBD is published in **annual rounds** (GBD 2021, GBD 2023, …) as
+**bulk CSV exports** via the
+[GBD Results Tool](https://vizhub.healthdata.org/gbd-results/). So:
 
-- The **dashboard-to-API** connection is live: the frontend makes real HTTP
-  requests and always reflects whatever is currently in the database.
-- The **API-to-GBD** connection is a scheduled ETL job (`refresh.sh`, run via
-  `make refresh`), re-run when a new GBD round or extract is downloaded.
-  Monthly checks are more than sufficient — there is nothing to gain from
-  polling more often than IHME actually publishes.
+- **Dashboard → API is live.** The frontend makes real HTTP requests and always
+  reflects whatever is in the database right now.
+- **API → IHME is scheduled.** `make refresh` re-ingests when a new round or
+  extract is downloaded. Checking monthly is more than sufficient; there is
+  nothing to gain from polling more often than IHME publishes.
 
-This is the same architecture recommended in the accompanying technical
-specification for the Department of Health prototype, and is standard
-practice for any dashboard built on an annually-released data source.
+This is standard practice for any dashboard built on an annually-released
+source, and it is the architecture recommended in the accompanying technical
+specification for the Department of Health prototype.
 
-## API reference
+## The API
+
+Interactive documentation, generated from the code, is at
+<http://127.0.0.1:8000/docs>.
 
 | Endpoint | Returns |
 |---|---|
-| `GET /api/meta` | GBD round, source, last updated |
-| `GET /api/indicators` | Available trend indicators |
-| `GET /api/trend?indicator=tobacco_sev` | Time series for one indicator |
-| `GET /api/ranked?type=causes\|risks` | Ranked bar-chart data |
-| `GET /api/export.csv?indicator=le` | CSV download, for citation and reuse |
 | `GET /api/health` | Liveness check |
+| `GET /api/meta` | GBD round and source of the current data |
+| `GET /api/indicators` | Every available trend indicator |
+| `GET /api/trend?indicator=tobacco_sev` | Time series for one indicator |
+| `GET /api/ranked?type=causes\|risks` | Ranked causes or risk factors |
+| `GET /api/export.csv?indicator=le` | CSV download, for citation and reuse |
 
 ```bash
 curl http://127.0.0.1:8000/api/meta
 curl "http://127.0.0.1:8000/api/trend?indicator=tobacco_sev"
 ```
 
-## Project layout
+Optional parameters `location` (default `Ireland`) and `sex` (default
+`combined`) exist on the trend endpoints — the schema has been multi-location
+from the start.
 
-```
-ucc_gbd_pipeline/
-├── Makefile                     All commands (run `make` to list them)
-├── app/
-│   ├── main.py                  FastAPI app: serves the API and the dashboard
-│   └── gbd.db                   SQLite database (created by the ETL)
-├── etl/
-│   └── load_seed.py             ETL: seed loader + GBD Results Tool adapter
-├── data/
-│   ├── gbd_seed.csv             Prototype seed data (trend indicators)
-│   ├── gbd_ranked_seed.csv      Prototype seed data (top causes/risks)
-│   └── incoming/                Drop new GBD Results Tool exports here
-├── logo/
-│   └── image.png                UCC identity mark (source file)
-├── profile_pic/
-│   └── zubair_kabir_profile_pic.png   PI photograph (source file)
-├── static/
-│   ├── index.html               Dashboard, served at /
-│   └── assets/
-│       ├── ucc-logo.png         Cropped, web-sized logo
-│       ├── zubair-kabir.png     PI photograph
-│       └── chart.umd.js         Chart.js, vendored (no CDN dependency)
-├── requirements.txt             Pinned dependencies
-├── refresh.sh                   Scheduled re-ingestion script
-├── Dockerfile
-└── docker-compose.yml
-```
+**Error codes are meaningful.** An unknown indicator returns `404`, not an
+empty series: an empty chart looks like real data, whereas a 404 cannot be
+mistaken for one. A missing database returns `503` with the command that fixes
+it.
 
-## Connecting a real GBD extract
+## The dashboard
+
+- **UCC identity** — logo and a map of the Republic of Ireland with Cork marked
+  on the left; principal investigator, linked to their UCC research profile, on
+  the right.
+- **Hero figure and stat tiles** — life expectancy leads; healthy life
+  expectancy, tobacco, BMI, and air pollution follow with sparklines and
+  change-since-baseline, all computed from live API responses.
+- **Light and dark themes** — follows the operating system by default, with a
+  toggle that remembers your choice.
+- **A table view on every chart** — the same data as an accessible table, so no
+  value is reachable only by hovering.
+
+**On the chart colours.** The series palette is not hand-picked. It uses
+validated categorical slots, checked in both themes for lightness band, chroma
+floor, colour-vision-deficiency separation (protanopia and deuteranopia,
+Machado 2009 at full severity), a normal-vision separation floor, and contrast
+against the surface. Two light-mode hues sit below the 3:1 contrast line, which
+is permitted only alongside a relief channel — hence the visible value labels
+and the table views. UCC navy and gold are chrome only; they never encode data.
+
+If you change a series colour, re-validate it rather than eyeballing it: a
+palette that merely *looks* distinct routinely collapses under CVD simulation.
+
+## Loading real GBD data
 
 1. Register for and download a bulk export from the
-   [GBD Results Tool](https://vizhub.healthdata.org/gbd-results/) for the
-   indicators, locations, and years you need (Ireland, 1990–2023, the
-   risk/cause set used in this prototype, or your own selection).
+   [GBD Results Tool](https://vizhub.healthdata.org/gbd-results/) — your
+   choice of indicators, locations, and years.
 2. Save it into `data/incoming/`.
 3. Run `make refresh`.
 
-The adapter in `etl/load_seed.py::ingest_gbd_export()` maps the standard GBD
-Results Tool export columns (`cause_name`/`rei_name`, `location_name`,
-`sex_name`, `year`, `val`, `metric_name`) into the same schema the seed data
-uses, so the API and dashboard need no changes when you switch from seed data
-to a real extract. Pass an `indicator_map` dict to keep stable, short IDs
-across re-ingests (recommended) rather than relying on the auto-slugified
-names.
+The adapter maps the standard export columns (`cause_name` / `rei_name`,
+`location_name`, `sex_name`, `year`, `val`, `metric_name`) onto the same schema
+the seed data uses, so the API and dashboard need no changes.
 
-To run the refresh on a schedule, add a monthly cron entry:
+**Pass an `indicator_map`.** Without one, indicator IDs are derived from IHME's
+label text — so a rewording between rounds would silently create a *new*
+indicator and break the dashboard's saved selection. With one, your IDs stay
+stable:
+
+```python
+ingest_gbd_export(
+    "data/incoming/IHME-GBD_2023_DATA.csv",
+    indicator_map={"Tobacco": "tobacco_sev", "High body-mass index": "bmi_sev"},
+)
+```
+
+### Scheduling it
+
+`scripts/refresh.sh` is cron-safe — it resolves its own repository root and
+uses the project virtual environment rather than the system Python:
 
 ```cron
-0 3 1 * *  cd /path/to/ucc_gbd_pipeline && make refresh >> /var/log/gbd_refresh.log 2>&1
+0 3 1 * *  /path/to/ucc_gbd_pipeline/scripts/refresh.sh >> /var/log/gbd_refresh.log 2>&1
 ```
+
+## Testing and code quality
+
+```bash
+make check     # lint + tests, the same checks CI runs
+```
+
+- **`make test`** — pytest. The API tests pin down every endpoint's contract:
+  response shape, ordering guarantees, and error codes. The ETL tests cover
+  idempotency, the real-export column mapping, stable indicator IDs, and that
+  one malformed row does not abort an otherwise good import.
+- **`make lint`** — [ruff](https://docs.astral.sh/ruff/), for both style and
+  formatting. `make format` fixes what can be fixed automatically.
+- **CI** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs the same
+  checks on every push and pull request, **plus** a real container build that
+  starts the image and smoke-tests it — so a change cannot merge if it only
+  works on one machine.
 
 ## Deployment
 
-`make up` runs the whole stack from `docker-compose.yml` and works as-is on:
+`docker compose up -d` runs this as-is on:
 
-- A UCC IT-provisioned Linux VM — the most straightforward route. Ask UCC IT
-  Services for a small VM with Docker; this is a common, low-overhead request
-  for a research group.
+- A UCC IT-provisioned Linux VM with Docker — the most straightforward route,
+  and a common, low-overhead request for a research group.
 - UCC's research computing environment, if it supports containerised services.
-- A free-tier or low-cost external host (Fly.io, Render) for a public-facing
-  research demo, if data governance permits — see below.
+- A low-cost external host (Fly.io, Render) for a public-facing demo, if data
+  governance permits.
 
-## Data governance note for UCC
+The container runs as a **non-root user** and declares a **healthcheck**, so an
+orchestrator can tell readiness from "the process started".
+
+**Before exposing this beyond a trusted network**, add authentication — an API
+key or UCC SSO check in `app/main.py`. There is none today: every endpoint is
+public and read-only by design.
+
+## Configuration
+
+Every setting is an environment variable with a sensible default, so nothing
+below is required to run the project.
+
+| Variable | Default | What it does |
+|---|---|---|
+| `GBD_DATA_DIR` | `<repo>/data` | Directory holding the CSVs and the database |
+| `GBD_DB_PATH` | `<GBD_DATA_DIR>/gbd.db` | The SQLite database file |
+| `GBD_STATIC_DIR` | `<repo>/static` | Frontend files served at `/` |
+| `GBD_ROUND` | `GBD 2023` | Label recorded against ingested rows |
+
+## Troubleshooting
+
+**"Port already in use"** — `make status` shows what is holding port 8000. Use
+`make stop` for a local process and `make down` for the container. Killing a
+PID from `lsof` while Docker is running fights the Docker proxy rather than
+stopping the container.
+
+**The dashboard says the API is unreachable** — the app is not running. Start
+it with `make run` or `make up`, then confirm with `make smoke`.
+
+**A `503` mentioning the database** — the ETL has not run. `make seed` builds
+it; `make reseed` rebuilds from scratch.
+
+**Charts are empty after loading a real export** — check the indicator IDs. Run
+`curl http://127.0.0.1:8000/api/indicators`; if they look like slugified IHME
+label text, supply an `indicator_map` (see
+[Loading real GBD data](#loading-real-gbd-data)).
+
+**Something is deeply wrong** — `make clean` removes the database, logs, and
+caches without touching `.venv`. `make distclean` also removes `.venv`. Then
+`make setup && make run`.
+
+## Data governance and attribution
 
 IHME's GBD data is free to use with attribution under IHME's
 [Free-to-Use Data Terms](https://www.healthdata.org/gbd/about/data-terms).
-Before any public-facing deployment, as opposed to internal research use,
+Before any **public-facing** deployment, as opposed to internal research use,
 confirm:
 
-- The specific citation IHME requires is included (see `/api/meta`, and add a
-  citation footer to any public dashboard).
-- Whether your use case counts as "redistribution" under IHME's terms.
-  Serving pre-aggregated indicators via this API is generally consistent with
-  permitted use, but check the current terms before wider release — they are
-  IHME's to set and can change.
-- UCC's own research data management policy for externally-hosted services,
-  if not hosting internally.
-- UCC brand guidelines for use of the university identity mark on anything
-  public-facing.
+- The citation IHME requires is included. The source and round are exposed at
+  `/api/meta` and shown in the dashboard footer.
+- Whether your use counts as "redistribution" under IHME's terms. Serving
+  pre-aggregated indicators through this API is generally consistent with
+  permitted use, but the terms are IHME's to set and can change — check the
+  current version before any wider release.
+- UCC's own research data management policy, if hosting externally.
 
-## Extending this prototype
-
-- **Add locations** — the schema already supports a `location` column. Extend
-  the ETL and seed data to cover more countries; see the GCC and
-  international-benchmarking work already done in this evidence series for a
-  working example of multi-location GBD queries.
-- **Add authentication** — if this needs restricted researcher-only views,
-  add an API key or UCC SSO check in `app/main.py` before deploying beyond a
-  local network.
-- **Swap SQLite for Postgres** — SQLite is fine for a research prototype at
-  this scale. If usage grows, swap the `sqlite3` calls in `app/main.py` for
-  SQLAlchemy against Postgres; the schema translates directly.
+The UCC logo and the identity assets in `brand/` are University College Cork
+marks. Check UCC's brand guidelines before publishing anything outward-facing
+under them.
 
 ---
 
 <div align="center">
 
-Not for clinical or diagnostic use.
+**Not for clinical or diagnostic use.**
+
+School of Public Health · University College Cork · Cork, Ireland
 
 </div>

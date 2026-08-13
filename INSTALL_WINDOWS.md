@@ -8,7 +8,7 @@
 
 <br>
 
-`Windows 10 / 11` · `macOS` · **no admin rights needed** · about **20 minutes**, once
+`Windows 10 / 11` · `macOS` · **no admin rights needed**
 
 <br>
 
@@ -20,23 +20,47 @@
 
 ---
 
+<div align="center">
+
+## ⚡ The short version
+
+**Windows — copy this one line, paste it into PowerShell, press Enter. That's it.**
+
+</div>
+
+```powershell
+irm https://raw.githubusercontent.com/abdulrazakucc/ucc_gbd_pipeline/main/scripts/install.ps1 | iex
+```
+
+That single command installs everything needed, builds the database, starts the
+dashboard, opens it in your browser, and puts a shortcut on your Desktop for
+next time. It needs **no admin rights**, and works whether or not you have
+Docker. Give it about 5 minutes.
+
+**Not sure how to open PowerShell?** See [Step 1](#step-1--open-powershell-) —
+it takes ten seconds. Everything else on this page is the longer explanation,
+the by-hand alternative, and what to do if something goes wrong.
+
+---
+
 ## 📖 Contents
 
 | | Section | Time |
 |---|---|---|
 | **①** | [What you are about to install](#-what-you-are-about-to-install) | 1 min read |
 | **②** | [First: do you have admin rights?](#-first-do-you-have-admin-rights) | 1 min |
-| **③** | [The shopping list](#-the-shopping-list) | 1 min read |
-| **④** | [**Windows — full step-by-step**](#-windows--full-step-by-step) | ~20 min |
-| **⑤** | [**Mac — full step-by-step**](#-mac--full-step-by-step) | ~20 min |
-| **⑥** | [Using it every day after that](#-using-it-every-day-after-that) | 30 sec |
-| **⑦** | [If something goes wrong](#-if-something-goes-wrong) | — |
-| **⑧** | [Removing everything again](#-removing-everything-again) | 2 min |
-| **⑨** | [Plain-English glossary](#-plain-english-glossary) | — |
+| **③** | [**The one-command install**](#-the-one-command-install-windows) | ~5 min |
+| **④** | [The shopping list](#-the-shopping-list) | 1 min read |
+| **⑤** | [Windows — the by-hand version](#-windows--the-by-hand-version) | ~20 min |
+| **⑥** | [Mac — full step-by-step](#-mac--full-step-by-step) | ~20 min |
+| **⑦** | [Using it every day after that](#-using-it-every-day-after-that) | 30 sec |
+| **⑧** | [If something goes wrong](#-if-something-goes-wrong) | — |
+| **⑨** | [Removing everything again](#-removing-everything-again) | 2 min |
+| **⑩** | [Plain-English glossary](#-plain-english-glossary) | — |
 
 ---
 
-## ① What you are about to install
+## 📘 What you are about to install
 
 This project is a **dashboard** — a web page with charts of Global Burden of
 Disease indicators for Ireland. It runs **entirely on your own computer**. No
@@ -64,7 +88,7 @@ browser at **`http://127.0.0.1:8000`** and see the dashboard.
 
 ---
 
-## ② First: do you have admin rights?
+## 🔑 First: do you have admin rights?
 
 This changes **nothing** about whether you can run the project — it only
 changes which optional extras are available to you. **The main path in this
@@ -106,7 +130,108 @@ If it says **"Standard"**, you do not.
 
 ---
 
-## ③ The shopping list
+## ⚡ The one-command install (Windows)
+
+<div align="center">
+
+**This is the easy way. It does every step in this guide for you.**
+
+</div>
+
+### 1. Open PowerShell
+
+Press the **Windows key**, type `powershell`, and click **Windows PowerShell**.
+**Left-click it normally — do _not_ choose "Run as administrator".**
+
+### 2. Paste this one line and press Enter
+
+```powershell
+irm https://raw.githubusercontent.com/abdulrazakucc/ucc_gbd_pipeline/main/scripts/install.ps1 | iex
+```
+
+<div align="center">
+
+### 3. There is no step 3. ☕
+
+</div>
+
+Wait about 5 minutes. When it finishes, your browser opens on the dashboard by
+itself.
+
+---
+
+### What that command actually does
+
+It is worth knowing, because you should never run a command you do not
+understand:
+
+| | Step | Detail |
+|:--:|---|---|
+| 1 | **Downloads the project** | Into `C:\Users\YourName\ucc_gbd_pipeline` |
+| 2 | **Looks for Docker** | If Docker is installed **and running**, it uses that and skips everything below — the container brings its own Python. |
+| 3 | **Looks for Python** | Reuses any Python 3.11 or 3.12 you already have. |
+| 4 | **Installs Python if needed** | Via **pyenv**, into `C:\Users\YourName\.pyenv`. **No admin rights, no system changes.** |
+| 5 | **Sets up and loads the data** | Creates the `.venv` workspace, installs the pinned components, builds the database. |
+| 6 | **Starts it and opens your browser** | Finds a free port if 8000 is busy. |
+| 7 | **Makes a Desktop shortcut** | Called **Ireland Health Evidence** — double-click it any time from now on. |
+
+> [!NOTE]
+> **Why does this need no admin rights?** Everything is written inside your own
+> user folder (`C:\Users\YourName\...`). Nothing goes into `Program Files`,
+> nothing touches the Windows registry, and no system-wide setting is changed.
+> That is the whole reason pyenv is used instead of the ordinary Python
+> installer.
+
+### With or without Docker — both work
+
+You do **not** need to install Docker, and you should not try to if you lack
+admin rights.
+
+| Your situation | What happens |
+|---|---|
+| **No Docker** (most people) | Uses the Python route with pyenv. Needs no admin rights. |
+| **Docker installed and running** | Uses Docker — nothing else is installed at all. |
+| **Docker installed but not running** | Falls back to the Python route automatically. Or start Docker Desktop and run the command again. |
+
+To force one or the other:
+
+```powershell
+# always use Python, even if Docker is available
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/abdulrazakucc/ucc_gbd_pipeline/main/scripts/install.ps1))) -Engine python
+```
+
+<details>
+<summary><b>Other options you can pass</b> (advanced, optional)</summary>
+
+<br>
+
+Run the installer from a downloaded copy of the project as
+`.\scripts\install.ps1 -Option value`:
+
+| Option | What it does |
+|---|---|
+| `-Engine auto\|docker\|python` | Force a particular engine. Default `auto`. |
+| `-InstallDir <path>` | Where to put the project. Default `C:\Users\YourName\ucc_gbd_pipeline`. |
+| `-PythonVersion 3.12.10` | Which Python to install if one is needed. |
+| `-Port 8080` | Serve on a different port. |
+| `-NoStart` | Set everything up but do not start it. |
+| `-NoShortcut` | Do not create the Desktop shortcut. |
+
+</details>
+
+> [!TIP]
+> **Safe to run twice.** If something goes wrong halfway, just run the same
+> command again — it detects what is already done and picks up from there.
+
+---
+
+## 🛒 The shopping list
+
+> [!NOTE]
+> **If the one command above worked, you can skip the rest of this page** and
+> go to [Using it every day](#-using-it-every-day-after-that). What follows is
+> the manual route, for when the installer cannot run — some managed machines
+> block downloaded scripts entirely.
 
 <div align="center">
 
@@ -144,7 +269,9 @@ If it says **"Standard"**, you do not.
 
 <div align="center">
 
-# 🪟 Windows — full step-by-step
+# 🪟 Windows — the by-hand version
+
+**Only needed if [the one command](#-the-one-command-install-windows) did not work.**
 
 **Do steps 1 → 7 once. After that you only ever need [step 7](#step-7--start-the-dashboard-).**
 
@@ -570,14 +697,39 @@ Then open **<http://127.0.0.1:8000>** and stop it with **`Ctrl + C`**.
 
 ## 🔁 Using it every day after that
 
-You never repeat the installation. From now on it is **three commands**:
+You never repeat the installation.
+
+<div align="center">
+
+### 🪟 Windows — double-click the Desktop shortcut
+
+# **Ireland Health Evidence**
+
+</div>
+
+That is the whole thing. The installer put it there. It starts the dashboard
+and opens your browser for you.
+
+**To stop:** close the black window that opened alongside it, or press
+**`Ctrl + C`** in it.
+
+> [!TIP]
+> Shortcut missing, or you installed by hand? There is a file called
+> **`Start Dashboard.cmd`** inside the project folder that does exactly the
+> same thing — double-click that instead. You can right-click it and choose
+> *Send to → Desktop* to get the shortcut back.
+
+<details>
+<summary><b>Or start it by typing commands</b> (the by-hand equivalent)</summary>
+
+<br>
 
 <table>
 <tr><th width="50%">🪟 Windows</th><th width="50%">🍎 Mac</th></tr>
 <tr><td valign="top">
 
 ```powershell
-cd "$HOME\Documents\ucc_gbd_pipeline-main"
+cd "$HOME\ucc_gbd_pipeline"
 .\.venv\Scripts\Activate.ps1
 python -m uvicorn app.main:app --port 8000
 ```
@@ -596,26 +748,23 @@ python -m uvicorn app.main:app --port 8000
 Then open **<http://127.0.0.1:8000>**, and press **`Ctrl + C`** in the window
 when you are finished.
 
-<details>
-<summary>💡 <b>Make it a one-click shortcut on Windows</b></summary>
-
-<br>
-
-1. Open **Notepad**
-2. Paste these two lines:
-
-   ```
-   cd /d "%USERPROFILE%\Documents\ucc_gbd_pipeline-main"
-   .venv\Scripts\python.exe -m uvicorn app.main:app --port 8000
-   ```
-
-3. **File → Save As**, set *Save as type* to **All Files**, and save it to your
-   **Desktop** as **`Start Dashboard.bat`**
-
-Double-clicking that file now starts the dashboard. Close the black window to
-stop it. No admin rights required.
+*If you installed by hand from the ZIP, your folder is called
+`ucc_gbd_pipeline-main` and sits in `Documents` — adjust the `cd` accordingly.*
 
 </details>
+
+<div align="center">
+
+### 🍎 Mac
+
+</div>
+
+```bash
+cd ~/Documents/ucc_gbd_pipeline
+make start
+```
+
+Stop it with `make stop`.
 
 ---
 
@@ -625,6 +774,51 @@ stop it. No admin rights required.
 > sentence is almost always at the very bottom.
 
 <br>
+
+<details>
+<summary><b>❌ The one-command installer failed part-way through</b></summary>
+
+<br>
+
+**First, simply run it again.** It is designed to be safe to re-run: it detects
+what is already done and carries on from there.
+
+```powershell
+irm https://raw.githubusercontent.com/abdulrazakucc/ucc_gbd_pipeline/main/scripts/install.ps1 | iex
+```
+
+If it fails in the same place twice, the installer prints a *"What to try"*
+list with the actual error underneath. If that does not help, fall back to
+[the by-hand version](#-windows--the-by-hand-version) — it does the same
+things one step at a time, so you can see exactly which one fails.
+
+</details>
+
+<details>
+<summary><b>❌ "irm/iex is not recognized", or the command does nothing at all</b></summary>
+
+<br>
+
+You are probably in **Command Prompt** (`cmd.exe`) rather than **PowerShell**.
+They look almost identical. Press the **Windows key**, type `powershell`,
+press Enter, and paste the command there.
+
+A PowerShell prompt starts with **`PS`**, like `PS C:\Users\YourName>`.
+A Command Prompt does not.
+
+</details>
+
+<details>
+<summary><b>❌ Your organisation blocks downloaded scripts entirely</b></summary>
+
+<br>
+
+Some managed university machines refuse to run any downloaded script,
+whatever the execution policy says. In that case use
+[the by-hand version](#-windows--the-by-hand-version) — it uses only commands
+you type yourself, which such policies generally allow.
+
+</details>
 
 <details>
 <summary><b>❌ "running scripts is disabled on this system"</b></summary>

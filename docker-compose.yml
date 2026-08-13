@@ -10,7 +10,10 @@ services:
     image: ucc-gbd-dashboard:latest
     container_name: ucc-gbd-app
     ports:
-      - "8000:8000"
+      # GBD_PORT lets a caller move the host-side port when 8000 is already
+      # taken -- scripts/install.ps1 sets it automatically. Inside the
+      # container the app is always on 8000.
+      - "${GBD_PORT:-8000}:8000"
     environment:
       # The database lives in the mounted data volume, so the container and
       # the host share one file: `make refresh` on the host is visible here

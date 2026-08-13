@@ -119,10 +119,17 @@ You are in the right place if `ls` shows a `Makefile`.
 
 ## Quick start
 
-> **On Windows, or new to the command line?** Follow
-> **[INSTALL_WINDOWS.md](INSTALL_WINDOWS.md)** instead — a step-by-step guide
-> written for non-technical users, which needs no admin rights on either
-> Windows or Mac.
+> **On Windows, or new to the command line?** There is a one-command
+> installer that needs no admin rights. Paste this into **PowerShell**:
+>
+> ```powershell
+> irm https://raw.githubusercontent.com/abdulrazakucc/ucc_gbd_pipeline/main/scripts/install.ps1 | iex
+> ```
+>
+> It installs Python via pyenv if needed (or uses Docker if you already have
+> it), builds the database, starts the app, and adds a Desktop shortcut. See
+> **[INSTALL_WINDOWS.md](INSTALL_WINDOWS.md)** for the full non-technical
+> guide, including a Mac section.
 
 ### The one-command version
 
@@ -313,7 +320,8 @@ ucc_gbd_pipeline/
 │   └── test_etl.py               Ingest correctness and idempotency
 │
 ├── scripts/
-│   └── refresh.sh                Scheduled re-ingestion (cron-friendly)
+│   ├── refresh.sh                Scheduled re-ingestion (cron-friendly)
+│   └── install.ps1               One-command Windows setup, no admin rights
 │
 ├── docker/
 │   └── entrypoint.sh             Seeds the database on first container start
@@ -399,6 +407,12 @@ the real CSVs, so running them can never disturb a database you are using.
 `docker/entrypoint.sh` seeds the database on first container start — needed
 because the database lives in the mounted volume, which would otherwise hide a
 copy baked in at build time.
+
+`scripts/install.ps1` is the one-command Windows installer described in
+[INSTALL_WINDOWS.md](INSTALL_WINDOWS.md). It targets people who do not have
+administrator rights: it prefers Docker when the machine already has it
+running, and otherwise installs Python through pyenv into the user's own
+profile. It is idempotent — re-running it resumes rather than restarts.
 
 ### `brand/` — source assets
 

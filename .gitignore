@@ -7,9 +7,11 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .ruff_cache/
+*.egg-info/
 
 # Local process state (PID and log from `make run`)
 .run/
+*.log
 
 # Database built by the ETL -- regenerate with: make seed
 data/gbd.db
@@ -19,5 +21,30 @@ data/gbd.db
 data/incoming/*
 !data/incoming/.gitkeep
 
+# Written by `pyenv local` when following INSTALL_WINDOWS.md. The project
+# supports Python 3.11+, so one machine's exact patch version is not something
+# to pin for everyone.
+.python-version
+
+# Downloaded by the pyenv-win bootstrap in INSTALL_WINDOWS.md, if that step is
+# run from inside the project folder.
+install-pyenv-win.ps1
+
 # macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+desktop.ini
+$RECYCLE.BIN/
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*~

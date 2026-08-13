@@ -44,7 +44,12 @@ desktop.ini
 $RECYCLE.BIN/
 
 # Editors
-.vscode/
+# .vscode/ is ignored apart from the two files that are genuinely shared:
+# the extension recommendations and the workspace settings that make these
+# documents render correctly for everyone.
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
 .idea/
 *.swp
 *~

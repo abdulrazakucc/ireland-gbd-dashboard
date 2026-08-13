@@ -79,7 +79,7 @@ browser at **`http://127.0.0.1:8000`** and see the dashboard.
 
 <div align="center">
 
-```
+```text
    Your computer                                    Your browser
    ┌───────────────────────┐                    ┌──────────────────┐
    │  the project files    │  ──────────────▶   │   the dashboard  │
@@ -293,14 +293,14 @@ Any of these can be added after `.\Install.cmd`, or passed to
 
 ---
 
-### Step 1 — Open PowerShell 🖱️
+### Step 1 — Open PowerShell 💻
 
 1. Press the **Windows key**
 2. Type `powershell`
 3. Click **Windows PowerShell** — **left-click normally**
 
 > [!WARNING]
-> **Do _not_ choose "Run as administrator".** This guide is written for a
+> **Do *not* choose "Run as administrator".** This guide is written for a
 > normal, everyday window. Running as administrator will install things in the
 > wrong place.
 
@@ -355,6 +355,7 @@ It should finish in under a minute with a line saying **pyenv-win is
 successfully installed**.
 
 > [!CAUTION]
+>
 > ### 🔁 Now close the PowerShell window completely — and open a new one
 >
 > This step is **not optional and is the most commonly skipped one.** Windows
@@ -492,7 +493,7 @@ python -m venv .venv
 
 ✅ Your prompt now starts with **`(.venv)`** — like this:
 
-```
+```text
 (.venv) PS C:\Users\YourName\Documents\ucc_gbd_pipeline-main>
 ```
 
@@ -548,7 +549,7 @@ python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 
 You will see something like:
 
-```
+```text
 INFO:     Started server process [12345]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
@@ -564,6 +565,7 @@ INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 </div>
 
 > [!WARNING]
+>
 > ### 🪟 Leave the PowerShell window open
 >
 > That window **is** the dashboard. It will sit there looking like it has

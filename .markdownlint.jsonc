@@ -1,0 +1,38 @@
+// Rules for the markdownlint extension (davidanson.vscode-markdownlint).
+//
+// The documents in this repository are written to be read on GitHub by
+// non-technical people, so they lean on layout that plain markdown cannot
+// express. The rules turned off below all flag that deliberate style; every
+// rule that catches a real mistake is left on.
+{
+  "default": true,
+
+  // Inline HTML. INSTALL_WINDOWS.md uses <div align="center">, <details>
+  // collapsible sections and side-by-side <table> layouts on purpose --
+  // markdown has no equivalent, and GitHub renders all of it.
+  "MD033": false,
+
+  // Line length. Prose here is hand-wrapped at ~80 columns, but tables and
+  // long URLs cannot be wrapped without breaking them.
+  "MD013": false,
+
+  // Table pipe spacing. Cosmetic only, and the compact style is easier to
+  // keep tidy by hand than aligned columns in tables this wide.
+  "MD060": false,
+
+  // "First line in a file should be a top-level heading". Both documents open
+  // with a centred <div> banner instead, which is the point of the design.
+  "MD041": false,
+
+  // Bold text used as a heading. Used inside centred banners, where a real
+  // heading would be the wrong size.
+  "MD036": false,
+
+  // Trailing punctuation in a heading, e.g. "do you have admin rights?".
+  // Questions as headings are deliberate in a guide aimed at beginners.
+  "MD026": false,
+
+  // Heading levels incrementing by one. The banner subtitles are h3 under an
+  // h1 by design, to keep them visually smaller than the title.
+  "MD001": false
+}

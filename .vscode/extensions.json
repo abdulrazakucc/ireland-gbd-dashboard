@@ -1,0 +1,25 @@
+{
+  // VS Code offers these the first time someone opens this folder.
+  // Install them all from the Extensions panel: "Show Recommended Extensions".
+  "recommendations": [
+    // Renders the preview exactly as GitHub does. This is the important one:
+    // these documents use GitHub alerts (> [!NOTE]), collapsible <details>
+    // blocks, HTML tables and centred headers, none of which look right in
+    // the plain default preview.
+    "bierner.github-markdown-preview",
+
+    // Diagrams written as ```mermaid fences.
+    "bierner.markdown-mermaid",
+
+    // Table of contents, list continuation, and formatting shortcuts.
+    "yzhang.markdown-all-in-one",
+
+    // Flags genuine markdown mistakes while editing. Configured in
+    // .markdownlint.json so it stays quiet about this project's deliberate
+    // use of inline HTML.
+    "davidanson.vscode-markdownlint",
+
+    // Syntax highlighting for scripts/install.ps1.
+    "ms-vscode.powershell"
+  ]
+}

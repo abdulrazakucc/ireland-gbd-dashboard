@@ -42,7 +42,7 @@ Senior Lecturer, School of Public Health, University College Cork.
 
 Three pieces that fit together:
 
-```
+```text
    IHME GBD export                  SQLite                     Browser
    (annual bulk CSV)                database
         │                              │                          │
@@ -95,7 +95,7 @@ and how to fix it:
 make doctor
 ```
 
-```
+```text
 ==> Checking your setup
     Python 3.11+          ok (found 3.12)
     make                  ok
@@ -282,7 +282,7 @@ make stop          # finished for now
 
 ## Repository structure
 
-```
+```text
 ucc_gbd_pipeline/
 │
 ├── app/                          The web application (API + serves the dashboard)

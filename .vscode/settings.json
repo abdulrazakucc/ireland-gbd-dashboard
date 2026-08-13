@@ -1,0 +1,97 @@
+{
+  // ---------------------------------------------------------------------
+  //  Reading markdown
+  //
+  //  Open any .md file and press  Cmd+Shift+V  (Mac) / Ctrl+Shift+V
+  //  (Windows) for the full-page preview, or  Cmd/Ctrl+K V  for a preview
+  //  side-by-side with the text.
+  //
+  //  With bierner.github-markdown-preview installed, that preview matches
+  //  github.com almost exactly -- alerts, collapsed <details> sections,
+  //  tables and emoji all render the way readers will actually see them.
+  // ---------------------------------------------------------------------
+
+  // Follow the editor's light/dark theme.
+  "markdown-preview-github-styles.colorTheme": "auto",
+
+  // Comfortable reading size. GitHub itself renders at 16px/1.5.
+  "markdown.preview.fontSize": 15,
+  "markdown.preview.lineHeight": 1.6,
+
+  // Leave "typographer" off: GitHub does not convert quotes or dashes, and
+  // the preview should show what readers will get.
+  "markdown.preview.typographer": false,
+
+  // A single newline is a line break on GitHub only inside tables, not in
+  // prose. Keeping this false matches GitHub's prose behaviour.
+  "markdown.preview.breaks": false,
+
+  // Clicking a heading in the preview scrolls the source to it, and vice
+  // versa -- useful in documents this long.
+  "markdown.preview.scrollEditorWithPreview": true,
+  "markdown.preview.scrollPreviewWithEditor": true,
+  "markdown.preview.markEditorSelection": true,
+
+  // Warn when an internal link like (#-the-shopping-list) points at a
+  // heading that does not exist. This repository's guides rely on them.
+  "markdown.validate.enabled": true,
+  "markdown.validate.fragmentLinks.enabled": "warning",
+  "markdown.validate.fileLinks.enabled": "warning",
+  "markdown.validate.referenceLinks.enabled": "warning",
+
+  // ---------------------------------------------------------------------
+  //  Editing markdown
+  // ---------------------------------------------------------------------
+  "[markdown]": {
+    // Wrap long prose to the window instead of scrolling sideways.
+    "editor.wordWrap": "on",
+    "editor.wrappingIndent": "same",
+
+    // Prose is not code: no autocomplete popups mid-sentence.
+    "editor.quickSuggestions": {
+      "other": false,
+      "comments": false,
+      "strings": false
+    },
+
+    // These documents use em dashes, arrows, box-drawing characters and
+    // emoji on purpose. Without this VS Code boxes each one in orange as a
+    // "confusable character", which makes the source painful to read.
+    "editor.unicodeHighlight.ambiguousCharacters": false,
+    "editor.unicodeHighlight.invisibleCharacters": false,
+    "editor.unicodeHighlight.nonBasicASCII": false,
+
+    // Trailing double-space is a hard line break in markdown, so trimming it
+    // silently changes rendering.
+    "files.trimTrailingWhitespace": false,
+
+    "editor.renderWhitespace": "none",
+    "editor.defaultFormatter": "yzhang.markdown-all-in-one"
+  },
+
+  // Markdown All in One: keep generated tables of contents to the section
+  // levels these documents actually use.
+  "markdown.extension.toc.levels": "2..3",
+  "markdown.extension.toc.updateOnSave": false,
+
+  // ---------------------------------------------------------------------
+  //  The rest of the project
+  // ---------------------------------------------------------------------
+  "files.associations": {
+    "*.cmd": "bat"
+  },
+
+  // Build artefacts and the virtual environment: hidden from the file tree
+  // and skipped by search, so they never bury the files that matter.
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/.ruff_cache": true,
+    "**/.run": true
+  },
+  "search.exclude": {
+    "**/.venv": true,
+    "**/data/gbd.db": true,
+    "**/static/assets/chart.umd.js": true
+  }
+}

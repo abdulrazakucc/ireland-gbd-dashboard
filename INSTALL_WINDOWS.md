@@ -2,7 +2,7 @@
 
 # 🖥️ Install &amp; Run Guide
 
-### Ireland GBD Dashboard — for everyone, not just programmers
+### Ireland Health Evidence — for everyone, not just programmers
 
 **School of Public Health · University College Cork**
 
@@ -301,7 +301,7 @@ dir
 ```
 
 ✅ You should see `Makefile`, `README.md`, `requirements.txt`, and folders
-called `app`, `data`, `etl`, `static`.
+called `app`, `data`, `etl`, `static`, `tests`.
 
 <details>
 <summary>💡 <b>Alternative: use Git instead of the ZIP</b> (only if you'll update often)</summary>
@@ -388,8 +388,14 @@ Yellow text is a *warning*, not an error, and can be ignored — including
 python etl\load_seed.py
 ```
 
-✅ Finishes in about a second. This creates the small data file the dashboard
-reads from.
+✅ Finishes in about a second and prints `Loaded 68 trend rows.`,
+`Loaded 19 ranked rows.` and the location of the database it just built
+(`data\gbd.db`).
+
+> [!IMPORTANT]
+> **Do not skip this step.** The database is *not* included in the download —
+> it is built on your machine from the CSV files in `data\`. Without it the
+> dashboard will start but the charts will be empty.
 
 ---
 
@@ -514,6 +520,39 @@ cd ucc_gbd_pipeline
 
 ### Step 5 — Set up and run
 
+Macs come with a tool called `make`, which does the whole setup for you.
+From inside the project folder:
+
+```bash
+pyenv local 3.12.10
+make dev
+```
+
+**`make dev` does everything**: creates the workspace, installs the
+components, builds the database, starts the dashboard, and opens your browser
+at **<http://127.0.0.1:8000>**. It takes about a minute the first time.
+
+When you are finished:
+
+```bash
+make stop
+```
+
+> [!TIP]
+> **`make doctor`** checks your machine has everything it needs and tells you
+> exactly what is missing. Run it first if anything misbehaves. The
+> [README](README.md) lists all the other `make` commands.
+>
+> *These `make` shortcuts do **not** work on Windows — which is why the
+> Windows steps above are spelled out in full.*
+
+<details>
+<summary><b>Prefer to run it by hand, without <code>make</code>?</b></summary>
+
+<br>
+
+Exactly the same steps the Windows guide uses:
+
 ```bash
 pyenv local 3.12.10
 python -m venv .venv
@@ -523,15 +562,9 @@ python etl/load_seed.py
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-Then open **<http://127.0.0.1:8000>**. Stop it with **`Ctrl + C`**.
+Then open **<http://127.0.0.1:8000>** and stop it with **`Ctrl + C`**.
 
-> [!TIP]
-> **Mac shortcut.** Macs come with a tool called `make`, so once Python is
-> installed you can skip most of the above and simply run **`make setup`**
-> then **`make run`** from inside the project folder. See the
-> [README](README.md) for the full list of `make` commands. *(These `make`
-> shortcuts do **not** work on Windows — that is why the Windows steps above
-> are spelled out in full.)*
+</details>
 
 ---
 
@@ -758,13 +791,14 @@ folder instead, you are one level too high — `cd` into it.
 
 <br>
 
-The database probably was not built. Stop the dashboard with `Ctrl + C` and run:
+The database was probably never built — it does not come with the download.
+Stop the dashboard with `Ctrl + C` and run:
 
 ```powershell
 python etl\load_seed.py
 ```
 
-Then start it again. (On Mac: `python etl/load_seed.py`.)
+Then start it again. (On Mac: `python etl/load_seed.py`, or `make reseed`.)
 
 </details>
 
@@ -813,7 +847,7 @@ That is the whole footprint. No admin rights needed to remove it either.
 
 <br>
 
-**Ireland GBD Dashboard** · School of Public Health, University College Cork
+**Ireland Health Evidence** · School of Public Health, University College Cork
 
 Principal Investigator — Dr. Zubair Kabir
 

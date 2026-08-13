@@ -119,17 +119,13 @@ You are in the right place if `ls` shows a `Makefile`.
 
 ## Quick start
 
-> **On Windows, or new to the command line?** There is a one-command
-> installer that needs no admin rights. Paste this into **PowerShell**:
->
-> ```powershell
-> irm https://raw.githubusercontent.com/abdulrazakucc/ucc_gbd_pipeline/main/scripts/install.ps1 | iex
-> ```
->
-> It installs Python via pyenv if needed (or uses Docker if you already have
-> it), builds the database, starts the app, and adds a Desktop shortcut. See
-> **[INSTALL_WINDOWS.md](INSTALL_WINDOWS.md)** for the full non-technical
-> guide, including a Mac section.
+> **On Windows, or new to the command line?** Unzip the project and
+> **double-click [`Install.cmd`](Install.cmd)**. That is the whole
+> installation — no terminal, no typing, no admin rights. It uses Docker if
+> the machine already has it running, otherwise installs Python via pyenv into
+> the user's own profile, builds the database, starts the app, and adds a
+> Desktop shortcut. See **[INSTALL_WINDOWS.md](INSTALL_WINDOWS.md)** for the
+> full non-technical guide, including a Mac section.
 
 ### The one-command version
 
@@ -333,6 +329,7 @@ ucc_gbd_pipeline/
 ├── .github/workflows/
 │   └── ci.yml                    Lint, test, and a real container build
 │
+├── Install.cmd                   Windows one-click setup (double-click it)
 ├── Makefile                      Every command for this project
 ├── Dockerfile                    Container image definition
 ├── docker-compose.yml            One service, one port
@@ -409,10 +406,16 @@ because the database lives in the mounted volume, which would otherwise hide a
 copy baked in at build time.
 
 `scripts/install.ps1` is the one-command Windows installer described in
-[INSTALL_WINDOWS.md](INSTALL_WINDOWS.md). It targets people who do not have
+[INSTALL_WINDOWS.md](INSTALL_WINDOWS.md), and `Install.cmd` at the repository
+root is the double-click wrapper for it. It targets people who do not have
 administrator rights: it prefers Docker when the machine already has it
 running, and otherwise installs Python through pyenv into the user's own
 profile. It is idempotent — re-running it resumes rather than restarts.
+
+The wrapper exists because Windows refuses to run a `.ps1` on double-click.
+`Install.cmd` invokes PowerShell with `-ExecutionPolicy Bypass`, which is
+scoped to that one child process: it changes no machine setting and needs no
+elevation.
 
 ### `brand/` — source assets
 

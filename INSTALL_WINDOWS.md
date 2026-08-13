@@ -24,22 +24,29 @@
 
 ## ⚡ The short version
 
-**Windows — copy this one line, paste it into PowerShell, press Enter. That's it.**
+**Windows — unzip the project folder, then double-click**
+
+# `Install.cmd`
 
 </div>
 
-```powershell
-irm https://raw.githubusercontent.com/abdulrazakucc/ucc_gbd_pipeline/main/scripts/install.ps1 | iex
-```
+That is the entire installation. No typing, no terminal, **no admin rights**.
+It installs everything needed, builds the database, starts the dashboard, opens
+it in your browser, and puts a shortcut on your Desktop for next time. Give it
+about 5 minutes.
 
-That single command installs everything needed, builds the database, starts the
-dashboard, opens it in your browser, and puts a shortcut on your Desktop for
-next time. It needs **no admin rights**, and works whether or not you have
-Docker. Give it about 5 minutes.
+> [!IMPORTANT]
+> **Double-click `Install.cmd` — do not open `scripts\install.ps1` directly.**
+> Windows blocks PowerShell files opened by double-click. `Install.cmd` exists
+> precisely to get around that, safely and without admin rights.
 
-**Not sure how to open PowerShell?** See [Step 1](#step-1--open-powershell-) —
-it takes ten seconds. Everything else on this page is the longer explanation,
-the by-hand alternative, and what to do if something goes wrong.
+**Windows may show a blue "Windows protected your PC" box** the first time,
+because the file came from the internet. Click **More info → Run anyway**. See
+[If something goes wrong](#-if-something-goes-wrong) if you would rather check
+it first.
+
+Everything else on this page is the longer explanation, the by-hand
+alternative, and what to do if something goes wrong.
 
 ---
 
@@ -138,20 +145,29 @@ If it says **"Standard"**, you do not.
 
 </div>
 
-### 1. Open PowerShell
+### 1. Get the project folder onto your computer
 
-Press the **Windows key**, type `powershell`, and click **Windows PowerShell**.
-**Left-click it normally — do _not_ choose "Run as administrator".**
+Whoever gave you this project will send you a **ZIP file**, or a link to
+download one. If you have access to the repository on GitHub, click the green
+**`< > Code`** button → **Download ZIP**.
 
-### 2. Paste this one line and press Enter
+### 2. Unzip it
 
-```powershell
-irm https://raw.githubusercontent.com/abdulrazakucc/ucc_gbd_pipeline/main/scripts/install.ps1 | iex
-```
+**Right-click** the ZIP → **Extract All…** → **Extract**. Your **Documents**
+folder is a good place for it.
+
+> [!WARNING]
+> **You must unzip it first.** Windows lets you peek inside a ZIP as though it
+> were a folder, but programs cannot run properly from in there. If you
+> double-click `Install.cmd` while still inside the ZIP, it will fail.
+
+### 3. Double-click `Install.cmd`
+
+It sits at the top level of the unzipped folder, next to `README.md`.
 
 <div align="center">
 
-### 3. There is no step 3. ☕
+### 4. There is no step 4. ☕
 
 </div>
 
@@ -167,13 +183,12 @@ understand:
 
 | | Step | Detail |
 |:--:|---|---|
-| 1 | **Downloads the project** | Into `C:\Users\YourName\ucc_gbd_pipeline` |
-| 2 | **Looks for Docker** | If Docker is installed **and running**, it uses that and skips everything below — the container brings its own Python. |
-| 3 | **Looks for Python** | Reuses any Python 3.11 or 3.12 you already have. |
-| 4 | **Installs Python if needed** | Via **pyenv**, into `C:\Users\YourName\.pyenv`. **No admin rights, no system changes.** |
-| 5 | **Sets up and loads the data** | Creates the `.venv` workspace, installs the pinned components, builds the database. |
-| 6 | **Starts it and opens your browser** | Finds a free port if 8000 is busy. |
-| 7 | **Makes a Desktop shortcut** | Called **Ireland Health Evidence** — double-click it any time from now on. |
+| 1 | **Looks for Docker** | If Docker is installed **and running**, it uses that and skips steps 2–3 — the container brings its own Python. |
+| 2 | **Looks for Python** | Reuses any Python 3.11 or 3.12 you already have. |
+| 3 | **Installs Python if needed** | Via **pyenv**, into `C:\Users\YourName\.pyenv`. **No admin rights, no system changes.** |
+| 4 | **Sets up and loads the data** | Creates the `.venv` workspace, installs the pinned components, builds the database. |
+| 5 | **Starts it and opens your browser** | Finds a free port if 8000 is busy. |
+| 6 | **Makes a Desktop shortcut** | Called **Ireland Health Evidence** — double-click it any time from now on. |
 
 > [!NOTE]
 > **Why does this need no admin rights?** Everything is written inside your own
@@ -193,11 +208,10 @@ admin rights.
 | **Docker installed and running** | Uses Docker — nothing else is installed at all. |
 | **Docker installed but not running** | Falls back to the Python route automatically. Or start Docker Desktop and run the command again. |
 
-To force one or the other:
+To force one or the other, open PowerShell in the project folder and run:
 
 ```powershell
-# always use Python, even if Docker is available
-& ([scriptblock]::Create((irm https://raw.githubusercontent.com/abdulrazakucc/ucc_gbd_pipeline/main/scripts/install.ps1))) -Engine python
+.\Install.cmd -Engine python
 ```
 
 <details>
@@ -205,8 +219,8 @@ To force one or the other:
 
 <br>
 
-Run the installer from a downloaded copy of the project as
-`.\scripts\install.ps1 -Option value`:
+Any of these can be added after `.\Install.cmd`, or passed to
+`.\scripts\install.ps1` directly:
 
 | Option | What it does |
 |---|---|
@@ -780,12 +794,8 @@ Stop it with `make stop`.
 
 <br>
 
-**First, simply run it again.** It is designed to be safe to re-run: it detects
-what is already done and carries on from there.
-
-```powershell
-irm https://raw.githubusercontent.com/abdulrazakucc/ucc_gbd_pipeline/main/scripts/install.ps1 | iex
-```
+**First, simply double-click `Install.cmd` again.** It is designed to be safe
+to re-run: it detects what is already done and carries on from there.
 
 If it fails in the same place twice, the installer prints a *"What to try"*
 list with the actual error underneath. If that does not help, fall back to
@@ -795,16 +805,34 @@ things one step at a time, so you can see exactly which one fails.
 </details>
 
 <details>
-<summary><b>❌ "irm/iex is not recognized", or the command does nothing at all</b></summary>
+<summary><b>❌ The window flashes open and shuts before you can read it</b></summary>
 
 <br>
 
-You are probably in **Command Prompt** (`cmd.exe`) rather than **PowerShell**.
-They look almost identical. Press the **Windows key**, type `powershell`,
-press Enter, and paste the command there.
+That means you double-clicked **`scripts\install.ps1`** rather than
+**`Install.cmd`**. Windows will not run a `.ps1` file that way.
 
-A PowerShell prompt starts with **`PS`**, like `PS C:\Users\YourName>`.
-A Command Prompt does not.
+Go back to the top level of the project folder and double-click
+**`Install.cmd`** instead — it keeps the window open and shows you what
+happened.
+
+</details>
+
+<details>
+<summary><b>❌ "Windows protected your PC" (blue SmartScreen box)</b></summary>
+
+<br>
+
+Expected: the file came from the internet and is not signed by Microsoft.
+Click **More info**, check that it says *Ireland Health Evidence* or
+`Install.cmd`, then click **Run anyway**.
+
+If you would rather satisfy yourself first, `Install.cmd` and
+`scripts\install.ps1` are both plain text — right-click either one and choose
+**Edit** or open it in Notepad to read exactly what it does before running it.
+
+If your organisation blocks it outright, use
+[the by-hand version](#-windows--the-by-hand-version).
 
 </details>
 

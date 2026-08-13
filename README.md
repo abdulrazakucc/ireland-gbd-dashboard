@@ -81,6 +81,9 @@ locally.
 - **Windows** — install [Python](https://www.python.org/downloads/) ticking
   *"Add python.exe to PATH"*, then use **WSL** (Ubuntu) or **Git Bash** so that
   `make` is available. In WSL: `sudo apt install make curl`.
+  *No admin rights, or not comfortable with WSL?* Use
+  [INSTALL_WINDOWS.md](INSTALL_WINDOWS.md) instead — it installs Python with
+  pyenv into your own user folder and skips `make` entirely.
 - **Linux** — `sudo apt install python3 python3-venv make curl`.
 
 </details>
@@ -115,6 +118,11 @@ cd path/to/ucc_gbd_pipeline
 You are in the right place if `ls` shows a `Makefile`.
 
 ## Quick start
+
+> **On Windows, or new to the command line?** Follow
+> **[INSTALL_WINDOWS.md](INSTALL_WINDOWS.md)** instead — a step-by-step guide
+> written for non-technical users, which needs no admin rights on either
+> Windows or Mac.
 
 ### The one-command version
 

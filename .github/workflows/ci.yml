@@ -36,11 +36,20 @@ jobs:
   docker:
     name: Container builds and serves
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
+      # The container writes gbd.db into the bind-mounted ./data -- a checkout
+      # directory owned by the runner, whose ownership the image cannot change.
+      # Running as any other UID cannot write there, so the entrypoint aborts
+      # and the app never answers. GBD_UID/GBD_GID are set inline rather than
+      # in a job-level `env:`, which would take precedence over $GITHUB_ENV.
+      # `make up` does the same thing from `id -u` / `id -g`.
       - name: Build and start
-        run: docker compose up -d --build
+        run: |
+          echo "runner $(id -u):$(id -g) | ./data owned by $(stat -c '%u:%g' data)"
+          GBD_UID=$(id -u) GBD_GID=$(id -g) docker compose up -d --build
 
       - name: Wait for the app, then smoke test it
         run: |

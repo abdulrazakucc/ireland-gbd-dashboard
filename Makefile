@@ -190,7 +190,7 @@ logs: ## Follow the local app log
 ## ------------------------------------------------------------- docker ----
 
 up: ## Build and start the container
-	@docker compose up -d --build
+	@GBD_UID=$$(id -u) GBD_GID=$$(id -g) docker compose up -d --build
 	@$(MAKE) --no-print-directory wait-api \
 		|| { echo "!! App did not start -- try: make docker-logs"; exit 1; }
 	@echo ""
@@ -199,7 +199,7 @@ up: ## Build and start the container
 	@echo ""
 
 down: ## Stop and remove the container (frees the port)
-	@docker compose down
+	@GBD_UID=$$(id -u) GBD_GID=$$(id -g) docker compose down
 
 docker-restart: down up ## Rebuild and restart the container
 

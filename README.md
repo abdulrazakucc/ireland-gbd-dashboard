@@ -682,6 +682,19 @@ it; `make reseed` rebuilds from scratch.
 label text, supply an `indicator_map` (see
 [Loading real GBD data](#loading-real-gbd-data)).
 
+**The container exits saying `/srv/data` is not writable** — start it with
+`make up` rather than `docker compose up`. The database lives in the bind-mounted
+`data/` directory, so the container has to write into a host folder whose
+ownership the image cannot change; `make up` runs it as your own user (`id -u`).
+If you must call compose directly, do the same:
+
+```bash
+GBD_UID=$(id -u) GBD_GID=$(id -g) docker compose up -d --build
+```
+
+This bites on Linux only. Docker Desktop on macOS and Windows translates file
+ownership, so a mismatched user goes unnoticed there.
+
 **Something is deeply wrong** — `make clean` removes the database, logs, and
 caches without touching `.venv`. `make distclean` also removes `.venv`. Then
 `make setup && make run`.

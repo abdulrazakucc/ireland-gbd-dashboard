@@ -22,11 +22,14 @@ PORT      := 8000
 RUN_DIR   := .run
 DB        := data/gbd.db
 APP_URL   := http://127.0.0.1:$(PORT)
+SITE_DIR  := site
+SITE_PORT := 8001
 
 .PHONY: help setup setup-dev seed reseed run stop restart status smoke open logs \
         test lint format check up down docker-restart docker-logs docker-ps \
         refresh clean distclean wait-api \
-        dev install start urls doctor
+        dev install start urls doctor \
+        site site-serve
 
 # Poll until the API answers, rather than guessing how long startup takes.
 # Deliberately not `curl --retry`: that gives up on a connection reset, which
@@ -61,6 +64,10 @@ help: ## Show this help
 	@echo ""
 	@echo "  Quality checks:"
 	@grep -E '^(test|lint|format|smoke|check):.*## ' $(MAKEFILE_LIST) \
+		| awk 'BEGIN{FS=":.*?## "}{printf "    \033[36m%-15s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "  Publish to GitHub Pages:"
+	@grep -E '^(site|site-serve):.*## ' $(MAKEFILE_LIST) \
 		| awk 'BEGIN{FS=":.*?## "}{printf "    \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 	@echo ""
 	@echo "  Data and housekeeping:"
@@ -235,13 +242,23 @@ smoke: ## Check a RUNNING app answers on every endpoint
 
 check: lint test ## Run lint and tests -- what CI runs
 
+## ----------------------------------------------------------- publish ----
+
+site: setup-dev $(DB) ## Build the static snapshot published to GitHub Pages
+	@$(PY) -m scripts.build_static_site --out $(SITE_DIR)
+	@echo "==> Preview it with: make site-serve"
+
+site-serve: site ## Build the snapshot and serve it exactly as Pages will
+	@echo "==> Snapshot on http://127.0.0.1:$(SITE_PORT)/  (Ctrl-C to stop)"
+	@cd $(SITE_DIR) && $(realpath $(PY)) -m http.server $(SITE_PORT)
+
 ## --------------------------------------------------- data and cleanup ----
 
 refresh: setup ## Ingest the newest GBD export from data/incoming/
 	@./scripts/refresh.sh
 
 clean: ## Remove the database, logs, and caches (keeps .venv)
-	@rm -rf $(RUN_DIR) $(DB) .pytest_cache .ruff_cache
+	@rm -rf $(RUN_DIR) $(DB) $(SITE_DIR) .pytest_cache .ruff_cache
 	@find . -name __pycache__ -type d -prune -exec rm -rf {} + 2>/dev/null || true
 	@echo "==> Cleaned. Rebuild the database with: make seed"
 

@@ -225,7 +225,7 @@ Any of these can be added after `.\Install.cmd`, or passed to
 | Option | What it does |
 |---|---|
 | `-Engine auto\|docker\|python` | Force a particular engine. Default `auto`. |
-| `-InstallDir <path>` | Where to put the project. Default `C:\Users\YourName\ucc_gbd_pipeline`. |
+| `-InstallDir <path>` | Where to put the project. Default `C:\Users\YourName\ireland-gbd-dashboard`. |
 | `-PythonVersion 3.12.10` | Which Python to install if one is needed. |
 | `-Port 8080` | Serve on a different port. |
 | `-NoStart` | Set everything up but do not start it. |
@@ -417,13 +417,13 @@ This needs no admin rights.
 
 ### Step 5 — Download the project 📦
 
-1. Go to **<https://github.com/abdulrazakucc/ucc_gbd_pipeline>**
+1. Go to **<https://github.com/abdulrazakucc/ireland-gbd-dashboard>**
 2. Click the green **`< > Code`** button
 3. Click **Download ZIP**
 4. Open your **Downloads** folder, **right-click** the ZIP → **Extract All…**
 5. Change the destination to your **Documents** folder and click **Extract**
 
-You should now have a folder called **`ucc_gbd_pipeline-main`** in your
+You should now have a folder called **`ireland-gbd-dashboard-main`** in your
 Documents.
 
 > [!NOTE]
@@ -433,7 +433,7 @@ Documents.
 Now tell PowerShell to work inside that folder:
 
 ```powershell
-cd "$HOME\Documents\ucc_gbd_pipeline-main"
+cd "$HOME\Documents\ireland-gbd-dashboard-main"
 ```
 
 **Check it worked:**
@@ -456,11 +456,11 @@ folder and needs no admin rights. Then:
 
 ```powershell
 cd "$HOME\Documents"
-git clone https://github.com/abdulrazakucc/ucc_gbd_pipeline.git
-cd ucc_gbd_pipeline
+git clone https://github.com/abdulrazakucc/ireland-gbd-dashboard.git
+cd ireland-gbd-dashboard
 ```
 
-Note the folder is then called `ucc_gbd_pipeline` (**without** `-main`), so
+Note the folder is then called `ireland-gbd-dashboard` (**without** `-main`), so
 adjust the `cd` commands later in this guide to match.
 
 To get updates later: `git pull`.
@@ -494,7 +494,7 @@ python -m venv .venv
 ✅ Your prompt now starts with **`(.venv)`** — like this:
 
 ```text
-(.venv) PS C:\Users\YourName\Documents\ucc_gbd_pipeline-main>
+(.venv) PS C:\Users\YourName\Documents\ireland-gbd-dashboard-main>
 ```
 
 > [!IMPORTANT]
@@ -649,14 +649,14 @@ source. It is not stuck.
 ### Step 4 — Download the project
 
 Either download and unzip the ZIP from
-<https://github.com/abdulrazakucc/ucc_gbd_pipeline> exactly as in the
+<https://github.com/abdulrazakucc/ireland-gbd-dashboard> exactly as in the
 [Windows step 5](#step-5--download-the-project-), or, since Macs already have
 Git:
 
 ```bash
 cd ~/Documents
-git clone https://github.com/abdulrazakucc/ucc_gbd_pipeline.git
-cd ucc_gbd_pipeline
+git clone https://github.com/abdulrazakucc/ireland-gbd-dashboard.git
+cd ireland-gbd-dashboard
 ```
 
 ---
@@ -745,7 +745,7 @@ and opens your browser for you.
 <tr><td valign="top">
 
 ```powershell
-cd "$HOME\ucc_gbd_pipeline"
+cd "$HOME\ireland-gbd-dashboard"
 .\.venv\Scripts\Activate.ps1
 python -m uvicorn app.main:app --port 8000
 ```
@@ -753,7 +753,7 @@ python -m uvicorn app.main:app --port 8000
 </td><td valign="top">
 
 ```bash
-cd ~/Documents/ucc_gbd_pipeline
+cd ~/Documents/ireland-gbd-dashboard
 source .venv/bin/activate
 python -m uvicorn app.main:app --port 8000
 ```
@@ -765,7 +765,7 @@ Then open **<http://127.0.0.1:8000>**, and press **`Ctrl + C`** in the window
 when you are finished.
 
 *If you installed by hand from the ZIP, your folder is called
-`ucc_gbd_pipeline-main` and sits in `Documents` — adjust the `cd` accordingly.*
+`ireland-gbd-dashboard-main` and sits in `Documents` — adjust the `cd` accordingly.*
 
 </details>
 
@@ -776,7 +776,7 @@ when you are finished.
 </div>
 
 ```bash
-cd ~/Documents/ucc_gbd_pipeline
+cd ~/Documents/ireland-gbd-dashboard
 make start
 ```
 
@@ -1001,11 +1001,11 @@ You are in the wrong folder. Check where you are, then go back:
 
 ```powershell
 Get-Location
-cd "$HOME\Documents\ucc_gbd_pipeline-main"
+cd "$HOME\Documents\ireland-gbd-dashboard-main"
 dir
 ```
 
-`dir` must list `requirements.txt`. If it lists another `ucc_gbd_pipeline-main`
+`dir` must list `requirements.txt`. If it lists another `ireland-gbd-dashboard-main`
 folder instead, you are one level too high — `cd` into it.
 
 </details>
@@ -1042,7 +1042,7 @@ just deleting folders:
 
 | What | Windows | Mac |
 |---|---|---|
-| The project | Delete `Documents\ucc_gbd_pipeline-main` | Delete `~/Documents/ucc_gbd_pipeline` |
+| The project | Delete `Documents\ireland-gbd-dashboard-main` | Delete `~/Documents/ireland-gbd-dashboard` |
 | Python + pyenv | Delete `C:\Users\YourName\.pyenv` | Delete `~/.pyenv` |
 
 That is the whole footprint. No admin rights needed to remove it either.

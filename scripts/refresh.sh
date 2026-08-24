@@ -12,7 +12,7 @@
 #   2. Run `make refresh`.
 #
 # Schedule it with cron (crontab -e), e.g. monthly on the 1st at 03:00:
-#   0 3 1 * *  /path/to/ucc_gbd_pipeline/scripts/refresh.sh >> /var/log/gbd_refresh.log 2>&1
+#   0 3 1 * *  /path/to/ireland-gbd-dashboard/scripts/refresh.sh >> /var/log/gbd_refresh.log 2>&1
 
 set -euo pipefail
 

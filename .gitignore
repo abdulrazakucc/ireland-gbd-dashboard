@@ -53,3 +53,7 @@ $RECYCLE.BIN/
 .idea/
 *.swp
 *~
+
+# Static snapshot built by `make site` and published by CI to GitHub Pages.
+# Always regenerated from the database; never edited by hand.
+site/

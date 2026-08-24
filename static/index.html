@@ -525,6 +525,13 @@
     font-size: 12.5px; color: var(--text-primary);
   }
   .api-row .what { margin-left: auto; font-size: 12px; color: var(--text-muted); }
+  .api-note {
+    margin: 14px 0 0; padding: 11px 13px; border-radius: 9px;
+    font-size: 12.5px; line-height: 1.55; color: var(--text-secondary);
+    background: var(--surface-sunken);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--series-3);
+  }
 
   /* ---------------------------------------------------------- footer --- */
 
@@ -715,6 +722,11 @@
       </div>
     </div>
     <div class="api-list" id="apiList"></div>
+    <p class="api-note" id="apiNote" hidden>
+      You are viewing a <strong>published snapshot</strong>: the figures above were exported
+      from these endpoints at build time and are served here as static files. To query the
+      API live, run the application &mdash; see the README for the one-command setup.
+    </p>
   </section>
 
 </main>
@@ -752,16 +764,47 @@
 </footer>
 
 <script src="assets/chart.umd.js"></script>
+<script src="config.js"></script>
 <script>
 /* ---- API location -------------------------------------------------------
-   The API and this page are served by the same process on the same port, so
-   calls go to this page's own origin -- nothing to reconfigure when this is
-   deployed behind a UCC hostname. Set window.API_BASE before this script only
-   to point the dashboard at a different API host.                          */
+   The dashboard runs in one of two shapes, set by config.js:
+
+   * "live"   -- the FastAPI app serves this page and the API from one
+                 process on one port, so calls go to /api/... on this page's
+                 own origin. Nothing to reconfigure when this is deployed
+                 behind a UCC hostname. Set window.API_BASE to point at an
+                 API on a different host.
+
+   * "static" -- a published snapshot (GitHub Pages), where no process exists
+                 to answer /api/.... scripts/build_static_site.py has written
+                 every answer to a file, and apiUrl() below maps each API
+                 path onto the file holding it. Paths stay relative, so the
+                 snapshot works at any URL prefix.
+
+   Everything after this block calls fetchJSON("/api/...") exactly as it
+   always did; only apiUrl() knows which shape is in play.                 */
+const STATIC = window.API_MODE === "static";
 const API_BASE = window.API_BASE
   || (location.protocol.startsWith("http") ? "" : "http://127.0.0.1:8000");
-// Same value, but always absolute -- for the URLs shown on screen.
-const API_SHOWN = API_BASE || location.origin;
+
+// Map a live API path onto the snapshot file that holds its response.
+function apiUrl(path) {
+  if (!STATIC) return API_BASE + path;
+  const [route, qs] = path.split("?");
+  const q = new URLSearchParams(qs || "");
+  if (route === "/api/trend")      return "api/trend/"  + encodeURIComponent(q.get("indicator")) + ".json";
+  if (route === "/api/ranked")     return "api/ranked/" + encodeURIComponent(q.get("type")) + ".json";
+  if (route === "/api/export.csv") return "api/export/" + encodeURIComponent(q.get("indicator")) + ".csv";
+  return route.replace(/^\/api\//, "api/") + ".json";   // /api/meta, /api/indicators, /api/health
+}
+
+// The origin the API reference list documents. A snapshot has no API of its
+// own, so it documents the address the app serves on when you run it.
+const API_SHOWN = STATIC ? "http://127.0.0.1:8000" : (API_BASE || location.origin);
+// Where a value on screen came from: a live route, or a file in the snapshot.
+const servedFrom = (route) => STATIC
+  ? "From the published snapshot of " + route
+  : "Served live from " + API_SHOWN + route;
 
 const $ = (id) => document.getElementById(id);
 const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -806,7 +849,7 @@ prefersDark.addEventListener("change", () => {
 /* ---- fetch ------------------------------------------------------------- */
 
 async function fetchJSON(path) {
-  const res = await fetch(API_BASE + path);
+  const res = await fetch(apiUrl(path));
   if (!res.ok) throw new Error(path + " -> HTTP " + res.status);
   return res.json();
 }
@@ -1043,8 +1086,9 @@ function drawTrend() {
     '<span class="key" style="--accent:' + color + '"><i></i>' + data.label
     + " &middot; " + data.location + " &middot; " + data.sex + "</span>";
   $("trendSource").textContent =
-    "Unit: " + unitShort(data.unit) + ". Served live from " + API_SHOWN + "/api/trend";
-  $("downloadCsv").href = API_SHOWN + "/api/export.csv?indicator=" + encodeURIComponent(data.indicator);
+    "Unit: " + unitShort(data.unit) + ". " + servedFrom("/api/trend");
+  $("downloadCsv").href = apiUrl("/api/export.csv?indicator=" + encodeURIComponent(data.indicator));
+  $("downloadCsv").setAttribute("download", data.indicator + ".csv");
 
   // Table twin -- every value readable without relying on the chart.
   $("trendTableWrap").innerHTML =
@@ -1137,7 +1181,7 @@ function drawRank() {
     ? "Ranked by age-standardized DALY rate."
     : "Ranked by share of all-cause DALYs attributable to each risk.";
   const unit = unitShort(data.items[0] ? data.items[0].unit : "");
-  $("rankSource").textContent = "Unit: " + unit + ". Served live from " + API_SHOWN + "/api/ranked";
+  $("rankSource").textContent = "Unit: " + unit + ". " + servedFrom("/api/ranked");
 
   $("rankTableWrap").innerHTML =
     "<table><caption>" + (causes ? "Leading causes" : "Leading risk factors")
@@ -1228,6 +1272,12 @@ function renderApiList() {
   $("apiList").innerHTML = rows.map(([path, what]) =>
     '<div class="api-row"><span class="verb">GET</span><code>' + API_SHOWN + path
     + '</code><span class="what">' + what + "</span></div>").join("");
+
+  // A snapshot has no API of its own. Say so, rather than printing addresses
+  // that look live and answer nothing.
+  if (STATIC) {
+    $("apiNote").hidden = false;
+  }
 }
 
 /* ---- init -------------------------------------------------------------- */
@@ -1243,17 +1293,24 @@ async function init() {
     $("chipStatus").innerHTML = '<span class="dot down"></span>API unreachable';
     $("heroValue").innerHTML = "&mdash;";
     $("heroDelta").textContent = "No connection to the API";
-    showStatus("Could not reach the API at " + API_SHOWN
-      + ". Start it with: make run (local) or make up (Docker).", false);
+    showStatus(STATIC
+      ? "This published snapshot is incomplete: its data files could not be loaded."
+      : "Could not reach the API at " + API_SHOWN
+        + ". Start it with: make run (local) or make up (Docker).", false);
     return;
   }
 
   $("chips").innerHTML =
       '<span class="chip place"><svg class="map-icon" aria-hidden="true" focusable="false">'
     + '<use href="#ie-map"/></svg>Republic of Ireland</span>'
-    + '<span class="chip"><span class="dot live"></span>Live API</span>'
+    + (STATIC
+        ? '<span class="chip"><span class="dot"></span>Static snapshot</span>'
+        : '<span class="chip"><span class="dot live"></span>Live API</span>')
     + '<span class="chip"><span class="dot"></span>' + (meta.gbd_round || "GBD round unknown") + "</span>"
-    + '<span class="chip"><span class="dot"></span>source: ' + (meta.source || "unknown") + "</span>";
+    + '<span class="chip"><span class="dot"></span>source: ' + (meta.source || "unknown") + "</span>"
+    + (STATIC && meta.snapshot_built
+        ? '<span class="chip"><span class="dot"></span>built ' + meta.snapshot_built.slice(0, 10) + "</span>"
+        : "");
 
   const indicators = await fetchJSON("/api/indicators");
   const sel = $("indicatorSelect");

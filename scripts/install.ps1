@@ -23,7 +23,7 @@
     Docker when it is present and running, otherwise uses Python.
 
 .PARAMETER InstallDir
-    Where to put the project. Defaults to %USERPROFILE%\ucc_gbd_pipeline.
+    Where to put the project. Defaults to %USERPROFILE%\ireland-gbd-dashboard.
     Ignored when the script is run from inside an existing copy.
 
 .PARAMETER PythonVersion
@@ -39,7 +39,7 @@
     Do not create the desktop shortcut.
 
 .EXAMPLE
-    irm https://raw.githubusercontent.com/abdulrazakucc/ucc_gbd_pipeline/main/scripts/install.ps1 | iex
+    irm https://raw.githubusercontent.com/abdulrazakucc/ireland-gbd-dashboard/main/scripts/install.ps1 | iex
 
 .EXAMPLE
     .\scripts\install.ps1 -Engine python -Port 8080
@@ -72,7 +72,7 @@ try {
     # .NET Core (PowerShell 7+) manages this itself and may not expose the property.
 }
 
-$RepoSlug   = 'abdulrazakucc/ucc_gbd_pipeline'
+$RepoSlug   = 'abdulrazakucc/ireland-gbd-dashboard'
 $RepoZipUrl = "https://github.com/$RepoSlug/archive/refs/heads/main.zip"
 $AppName    = 'Ireland Health Evidence'
 
@@ -548,7 +548,7 @@ if ($root) {
     Write-Ok "Using the copy you already have"
     Write-Info $root
 } else {
-    if (-not $InstallDir) { $InstallDir = Join-Path $HOME 'ucc_gbd_pipeline' }
+    if (-not $InstallDir) { $InstallDir = Join-Path $HOME 'ireland-gbd-dashboard' }
     $root = Install-ProjectFiles -Destination $InstallDir
 }
 

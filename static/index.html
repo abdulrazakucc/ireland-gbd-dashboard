@@ -144,40 +144,40 @@
 
   .masthead-top {
     display: flex; align-items: center; justify-content: space-between;
-    gap: 32px; flex-wrap: wrap; padding: 24px 0 26px;
+    gap: 24px; flex-wrap: wrap; padding: 15px 0 15px;
   }
 
   /* Left: UCC identity. The logo is the largest element in the masthead. */
-  .brand { display: flex; align-items: center; gap: 22px; min-width: 0; }
+  .brand { display: flex; align-items: center; gap: 16px; min-width: 0; }
   .brand-logo {
-    height: 86px; width: auto; display: block;
-    border-radius: 10px;
-    box-shadow: 0 6px 22px rgba(0,0,0,0.34);
+    height: 58px; width: auto; display: block;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.34);
   }
   .brand-rule {
     width: 1px; align-self: stretch; margin: 4px 0;
     background: linear-gradient(180deg, transparent, rgba(255,255,255,0.30), transparent);
   }
   .brand-text h1 {
-    margin: 0; font-size: 30px; font-weight: 680; letter-spacing: -0.025em; line-height: 1.1;
+    margin: 0; font-size: 22px; font-weight: 680; letter-spacing: -0.025em; line-height: 1.12;
   }
   .brand-text .eyebrow {
-    margin: 0 0 5px; font-size: 11px; font-weight: 700;
+    margin: 0 0 3px; font-size: 9.5px; font-weight: 700;
     letter-spacing: 0.15em; text-transform: uppercase; color: var(--ucc-gold);
   }
-  .brand-text .sub { margin: 7px 0 0; font-size: 13.5px; color: var(--text-onnavy-2); }
+  .brand-text .sub { margin: 3px 0 0; font-size: 12px; color: var(--text-onnavy-2); }
 
   /* Right: principal investigator. The whole card links to the UCC profile. */
   .pi-card {
     position: relative;
-    display: flex; align-items: center; gap: 18px;
+    display: flex; align-items: center; gap: 13px;
     background:
       radial-gradient(150% 120% at 0% 0%, rgba(255,181,0,0.16), transparent 58%),
       linear-gradient(135deg, rgba(255,255,255,0.16), rgba(255,255,255,0.07));
     border: 1px solid rgba(255,255,255,0.26);
-    border-radius: 16px;
-    padding: 16px 22px 16px 18px;
-    min-width: 340px;
+    border-radius: 13px;
+    padding: 10px 16px 10px 14px;
+    min-width: 0;
     text-decoration: none; color: inherit;
     backdrop-filter: blur(8px);
     box-shadow: 0 10px 30px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.16);
@@ -185,7 +185,7 @@
   }
   /* Gold spine down the leading edge. */
   .pi-card::before {
-    content: ""; position: absolute; left: 0; top: 12px; bottom: 12px; width: 3px;
+    content: ""; position: absolute; left: 0; top: 9px; bottom: 9px; width: 2.5px;
     border-radius: 0 3px 3px 0;
     background: linear-gradient(180deg, var(--ucc-gold), #ff8a00);
     box-shadow: 0 0 14px rgba(255,181,0,0.55);
@@ -198,14 +198,14 @@
   }
   /* Photo in a gold gradient ring. */
   .pi-photo-ring {
-    flex: none; padding: 2.5px; border-radius: 15px;
+    flex: none; padding: 2px; border-radius: 12px;
     background: linear-gradient(150deg, #ffd166, var(--ucc-gold) 45%, #e08a00);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.38), 0 0 18px rgba(255,181,0,0.28);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.34), 0 0 12px rgba(255,181,0,0.24);
   }
   .pi-photo {
     display: block;
-    width: 92px; height: 92px;
-    border-radius: 12.5px;
+    width: 62px; height: 62px;
+    border-radius: 10px;
     object-fit: cover; object-position: center 18%;
     background: rgba(255,255,255,0.10);
   }
@@ -215,37 +215,37 @@
      measures 11.2:1 and is unmissable. */
   .pi-card .pi-role {
     display: inline-block;
-    font-size: 10px; font-weight: 800; letter-spacing: 0.12em;
+    font-size: 8.5px; font-weight: 800; letter-spacing: 0.11em;
     text-transform: uppercase;
     color: #06283d;
     background: linear-gradient(135deg, var(--accent-aqua) 0%, #67e8f9 100%);
-    padding: 4px 10px; border-radius: 999px;
-    margin-bottom: 8px;
-    box-shadow: 0 2px 12px rgba(94,234,212,0.40);
+    padding: 2.5px 8px; border-radius: 999px;
+    margin-bottom: 4px;
+    box-shadow: 0 2px 9px rgba(94,234,212,0.36);
   }
   .pi-card .pi-name {
-    font-size: 23px; font-weight: 720; letter-spacing: -0.022em;
+    font-size: 16px; font-weight: 720; letter-spacing: -0.022em;
     line-height: 1.15; color: #fff;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.35);
+    text-shadow: 0 2px 8px rgba(0,0,0,0.35);
   }
   /* Short gold rule under the name. */
   .pi-card .pi-name::after {
-    content: ""; display: block; width: 42px; height: 2.5px; border-radius: 2px;
-    margin: 7px 0 8px;
+    content: ""; display: block; width: 32px; height: 2px; border-radius: 2px;
+    margin: 4px 0 4px;
     background: linear-gradient(90deg, var(--ucc-gold), rgba(255,181,0,0));
     transition: width .25s ease;
   }
-  .pi-card:hover .pi-name::after { width: 74px; }
-  .pi-card .pi-line { font-size: 13px; color: #dbe7f3; margin-top: 3px; }
+  .pi-card:hover .pi-name::after { width: 58px; }
+  .pi-card .pi-line { font-size: 11px; line-height: 1.4; color: #dbe7f3; margin-top: 1px; }
   /* Profile link as a solid call-to-action: navy on gold, 9.4:1. */
   .pi-card .pi-link {
-    margin-top: 11px;
-    display: inline-flex; align-items: center; gap: 6px;
-    font-size: 11.5px; font-weight: 750; letter-spacing: 0.02em;
+    margin-top: 7px;
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 10px; font-weight: 750; letter-spacing: 0.02em;
     color: #14202b;
     background: linear-gradient(135deg, #ffc93c, var(--ucc-gold));
-    padding: 6px 12px; border-radius: 999px;
-    box-shadow: 0 3px 12px rgba(255,181,0,0.34);
+    padding: 4px 10px; border-radius: 999px;
+    box-shadow: 0 2px 9px rgba(255,181,0,0.30);
     transition: transform .18s ease, box-shadow .18s ease;
   }
   .pi-card:hover .pi-link {
@@ -257,23 +257,23 @@
      PI card in the masthead's visual hierarchy, not to out-shout them. */
   .masthead-hero {
     display: flex; align-items: flex-end; justify-content: space-between;
-    gap: 32px; flex-wrap: wrap;
-    padding: 2px 0 24px;
+    gap: 14px; flex-wrap: wrap;
+    padding: 0 0 14px;
     border-top: 1px solid rgba(255,255,255,0.12);
-    padding-top: 20px;
+    padding-top: 13px;
   }
   .hero-figure .hero-label {
-    font-size: 11.5px; letter-spacing: 0.09em; text-transform: uppercase;
-    color: var(--text-onnavy-2); margin-bottom: 4px;
+    font-size: 10px; letter-spacing: 0.09em; text-transform: uppercase;
+    color: var(--text-onnavy-2); margin-bottom: 2px;
   }
   .hero-figure .hero-value {
-    font-size: 38px; font-weight: 680; line-height: 1.05; letter-spacing: -0.025em;
+    font-size: 28px; font-weight: 680; line-height: 1.05; letter-spacing: -0.025em;
   }
   .hero-figure .hero-value .hero-unit {
-    font-size: 15px; font-weight: 500; color: var(--text-onnavy-2); margin-left: 7px;
+    font-size: 13px; font-weight: 500; color: var(--text-onnavy-2); margin-left: 6px;
     letter-spacing: 0;
   }
-  .hero-figure .hero-delta { font-size: 12.5px; color: var(--text-onnavy-2); margin-top: 5px; }
+  .hero-figure .hero-delta { font-size: 11.5px; color: var(--text-onnavy-2); margin-top: 3px; }
   .hero-figure .hero-delta strong { color: var(--ucc-gold); font-weight: 650; }
 
   /* Republic of Ireland outline: Natural Earth 10m boundary, projected
@@ -283,8 +283,8 @@
      as the logo so the two read as a matched pair. */
   .map-panel {
     position: relative; flex: none;
-    width: 86px; height: 86px;
-    border-radius: 10px;
+    width: 58px; height: 58px;
+    border-radius: 8px;
     background:
       radial-gradient(120% 100% at 50% 0%, rgba(94,234,212,0.16), transparent 70%),
       linear-gradient(160deg, rgba(255,255,255,0.13), rgba(255,255,255,0.05));
@@ -309,7 +309,7 @@
     background-size: 14px 14px;
     opacity: 0.45;
   }
-  .map-panel svg { position: relative; width: 74px; height: 74px; overflow: visible; }
+  .map-panel svg { position: relative; width: 48px; height: 48px; overflow: visible; }
   .map-shape {
     fill: url(#ie-fill);
     stroke: rgba(255,255,255,0.55); stroke-width: 1.1;
@@ -342,13 +342,13 @@
     font-weight: 600;
   }
 
-  .chips { display: flex; gap: 9px; flex-wrap: wrap; align-items: center; }
+  .chips { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
   .chip {
-    display: inline-flex; align-items: center; gap: 7px;
+    display: inline-flex; align-items: center; gap: 6px;
     background: rgba(255,255,255,0.11);
     border: 1px solid rgba(255,255,255,0.20);
-    border-radius: 999px; padding: 6px 13px;
-    font-size: 12px; color: #fff; white-space: nowrap;
+    border-radius: 999px; padding: 4.5px 11px;
+    font-size: 11px; color: #fff; white-space: nowrap;
   }
   .chip.alert { background: rgba(200,16,46,0.30); border-color: rgba(255,140,140,0.5); }
   .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ucc-gold); flex: none; }
@@ -558,15 +558,21 @@
 
   @media (max-width: 720px) {
     .wrap { padding: 0 18px; }
-    .brand { gap: 14px; }
-    .brand-logo { height: 58px; }
-    .brand-text h1 { font-size: 21px; }
-    .hero-figure .hero-value { font-size: 30px; }
-    .pi-card { min-width: 0; width: 100%; }
-    .pi-photo { width: 68px; height: 68px; }
-    .pi-card .pi-name { font-size: 19px; }
-    .map-panel { width: 66px; height: 66px; }
-    .map-panel svg { width: 50px; height: 50px; }
+    .masthead-top { padding: 12px 0; gap: 14px; }
+    .brand { gap: 12px; }
+    .brand-logo { height: 46px; }
+    .brand-text h1 { font-size: 18px; }
+    .hero-figure .hero-value { font-size: 25px; }
+    .pi-card { width: 100%; }
+    .pi-photo { width: 52px; height: 52px; }
+    .pi-card .pi-name { font-size: 15px; }
+    .pi-card .pi-line { font-size: 10.5px; }
+    .chip { font-size: 10px; padding: 3.5px 9px; gap: 5px; }
+    .chips { gap: 6px; }
+    .hero-figure .hero-delta { font-size: 10.5px; }
+    .masthead-hero { padding-top: 11px; padding-bottom: 11px; }
+    .map-panel { width: 46px; height: 46px; }
+    .map-panel svg { width: 38px; height: 38px; }
     select { min-width: 0; width: 100%; }
     .field { width: 100%; }
   }
@@ -680,7 +686,7 @@
     <div class="card-head">
       <div>
         <h2><span class="accent-bar"></span><span id="trendTitle">Indicator trend</span></h2>
-        <p class="desc">Served live from the API. Hover the chart for exact values.</p>
+        <p class="desc">Hover the chart for exact values.</p>
       </div>
       <div class="card-actions">
         <button class="btn" id="trendTableToggle" aria-pressed="false">Table view</button>

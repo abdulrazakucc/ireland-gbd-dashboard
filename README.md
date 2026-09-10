@@ -72,7 +72,8 @@ re-implementing its queries, **it cannot drift from the API** — and
 The published page is fully functional: every filter, both charts, the
 uncertainty bands, the table views, and the CSV, PNG and PDF downloads all
 work. The one thing a set of files cannot answer is an arbitrary year range,
-so that control is offered only by the live app. The page labels itself
+so that control is offered only by the live app — as is the API reference
+section, whose addresses need a running app behind them. The page labels itself
 *Snapshot* with the date it was built, so nobody mistakes it for a live feed.
 
 Build and preview it exactly as Pages will serve it:

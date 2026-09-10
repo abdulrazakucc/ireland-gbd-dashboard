@@ -117,6 +117,12 @@ class TestDashboardAgreesWithTheBuild:
         assert match, "RANK_KEYS not found in index.html"
         assert re.findall(r'"([a-z_]+)"', match.group(1)) == list(RANK_KEYS)
 
+    def test_published_snapshot_hides_the_api_reference(self) -> None:
+        """A static site has no API behind it, so listing endpoints there would be dead links."""
+        html = INDEX.read_text()
+        assert 'id="apiSection"' in html
+        assert '$("apiSection").hidden = STATIC;' in html
+
     def test_index_uses_relative_urls_only(self) -> None:
         """A root-absolute URL would 404 under a /repo/ project-page prefix."""
         html = INDEX.read_text()

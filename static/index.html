@@ -556,13 +556,6 @@
     font-size: 12.5px; color: var(--text-primary);
   }
   .api-row .what { margin-left: auto; font-size: 12px; color: var(--text-muted); }
-  .api-note {
-    margin: 14px 0 0; padding: 11px 13px; border-radius: 9px;
-    font-size: 12.5px; line-height: 1.55; color: var(--text-secondary);
-    background: var(--surface-sunken);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--series-3);
-  }
 
   /* ---------------------------------------------------------- footer --- */
 
@@ -759,8 +752,9 @@
     <p class="source-note" id="rankSource"></p>
   </section>
 
-  <!-- API reference -->
-  <section class="card" style="--accent: var(--series-3);">
+  <!-- API reference: live app only. A published snapshot has no API behind it,
+       so the script hides this section there rather than list dead addresses. -->
+  <section class="card" id="apiSection" style="--accent: var(--series-3);">
     <div class="card-head">
       <div>
         <h2><span class="accent-bar"></span>API reference</h2>
@@ -768,11 +762,6 @@
       </div>
     </div>
     <div class="api-list" id="apiList"></div>
-    <p class="api-note" id="apiNote" hidden>
-      You are viewing a <strong>published snapshot</strong>: the figures above were exported
-      from these endpoints at build time and are served here as static files. To query the
-      API live, run the application &mdash; see the README for the one-command setup.
-    </p>
   </section>
 
 </main>
@@ -865,9 +854,8 @@ function apiUrl(path) {
   return route.replace(/^\/api\//, "api/") + ".json";   // meta, series, dimensions, health, ranked/options
 }
 
-// The origin the API reference list documents. A snapshot has no API of its
-// own, so it documents the address the app serves on when you run it.
-const API_SHOWN = STATIC ? "http://127.0.0.1:8000" : (API_BASE || location.origin);
+// The origin the API reference list documents (live app only).
+const API_SHOWN = API_BASE || location.origin;
 // Where a value on screen came from: a live route, or a file in the snapshot.
 const servedFrom = (route) => STATIC
   ? "From the published snapshot of " + route
@@ -1566,6 +1554,9 @@ wireTableToggle("rankTableToggle", "rankTableWrap", "rankChartWrap");
 /* ---- API reference list ------------------------------------------------ */
 
 function renderApiList() {
+  // A snapshot has no API of its own: every address listed would be dead.
+  $("apiSection").hidden = STATIC;
+  if (STATIC) return;
   const rows = [
     ["/api/meta", "Release, import date, source files and checksums, citation"],
     ["/api/dimensions", "Values available for every dimension"],
@@ -1580,12 +1571,6 @@ function renderApiList() {
   $("apiList").innerHTML = rows.map(([path, what]) =>
     '<div class="api-row"><span class="verb">GET</span><code>' + esc(API_SHOWN + path)
     + '</code><span class="what">' + what + "</span></div>").join("");
-
-  // A snapshot has no API of its own. Say so, rather than printing addresses
-  // that look live and answer nothing.
-  if (STATIC) {
-    $("apiNote").hidden = false;
-  }
 }
 
 /* ---- provenance -------------------------------------------------------- */

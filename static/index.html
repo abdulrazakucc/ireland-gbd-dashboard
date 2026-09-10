@@ -917,7 +917,19 @@ prefersDark.addEventListener("change", () => {
 
 async function fetchJSON(path) {
   const res = await fetch(apiUrl(path));
-  if (!res.ok) throw new Error(path + " -> HTTP " + res.status);
+  if (!res.ok) {
+    // Keep the API's own explanation -- a 503 names the command that builds
+    // the database -- so the page can show it instead of a bare status code.
+    let detail = "";
+    try {
+      const body = await res.json();
+      if (typeof body.detail === "string") detail = body.detail;
+    } catch (e) { /* not JSON, e.g. a missing snapshot file */ }
+    const error = new Error(path + " -> HTTP " + res.status + (detail ? ": " + detail : ""));
+    error.status = res.status;
+    error.detail = detail;
+    throw error;
+  }
   return res.json();
 }
 
@@ -1608,13 +1620,16 @@ async function init() {
   try {
     meta = await fetchJSON("/api/meta");
   } catch (e) {
+    // A 503 means the app is up but its database is missing or out of date --
+    // a different problem from an unreachable API, with a different fix.
+    const noDatabase = !STATIC && e.status === 503;
     $("chipStatus").className = "chip alert";
-    $("chipStatus").innerHTML = '<span class="dot down"></span>API unreachable';
+    $("chipStatus").innerHTML = '<span class="dot down"></span>' + (noDatabase ? "Database not ready" : "API unreachable");
     $("heroValue").innerHTML = "&mdash;";
-    $("heroDelta").textContent = "No connection to the API";
+    $("heroDelta").textContent = noDatabase ? "The app is running, but its database is not ready" : "No connection to the API";
     $("datasetLine").textContent = "Unavailable";
-    showStatus(STATIC
-      ? "This published snapshot is incomplete: its data files could not be loaded."
+    showStatus(noDatabase ? e.detail
+      : STATIC ? "This published snapshot is incomplete: its data files could not be loaded."
       : "Could not reach the API at " + API_SHOWN
         + ". Start it with: make run (local) or make up (Docker).", false);
     return;

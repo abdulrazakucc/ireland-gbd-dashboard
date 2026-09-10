@@ -530,14 +530,15 @@ Yellow text is a *warning*, not an error, and can be ignored — including
 python etl\load_seed.py
 ```
 
-✅ Finishes in about a second and prints `Loaded 68 trend rows.`,
-`Loaded 19 ranked rows.` and the location of the database it just built
-(`data\gbd.db`).
+✅ Finishes in a few seconds and prints
+`Imported GBD 2023 (Prototype seed data): 87 estimates in 30 series.`,
+then the location of the database it just built
+(`Active database: …\data\gbd.db`).
 
 > [!IMPORTANT]
 > **Do not skip this step.** The database is *not* included in the download —
-> it is built on your machine from the CSV files in `data\`. Without it the
-> dashboard will start but the charts will be empty.
+> it is built on your machine from the CSV file in `data\`. Without it the
+> dashboard will start but say that its database is not ready.
 
 ---
 
@@ -1015,7 +1016,8 @@ folder instead, you are one level too high — `cd` into it.
 
 <br>
 
-The database was probably never built — it does not come with the download.
+The database was probably never built — it does not come with the download —
+or it was built by an older version of this project. The page says which.
 Stop the dashboard with `Ctrl + C` and run:
 
 ```powershell

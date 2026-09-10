@@ -105,7 +105,8 @@ def _check_schema(conn: sqlite3.Connection, path: Path) -> None:
     if row is None or row[0] != str(SCHEMA_VERSION):
         raise DatabaseNotInitialised(
             f"The database at {path} was built by an older version of this project. "
-            "Rebuild it with: make reseed (seed data) or make refresh (a GBD export)"
+            "Rebuild it with: make reseed, or python etl/load_seed.py (seed data); "
+            "or re-import your GBD export with: make refresh"
         )
     _checked.add(key)
 
@@ -115,7 +116,9 @@ def connection(db_path: Path | None = None) -> Iterator[sqlite3.Connection]:
     """Yield a read connection to the database, closing it on the way out."""
     path = Path(db_path or config.DB_PATH)
     if not path.exists():
-        raise DatabaseNotInitialised(f"No database at {path}. Build it with: make seed")
+        raise DatabaseNotInitialised(
+            f"No database at {path}. Build it with: make seed (or: python etl/load_seed.py)"
+        )
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     try:

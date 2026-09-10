@@ -439,14 +439,17 @@ function Initialize-PythonEngine {
     }
     Write-Ok 'Components installed'
 
-    Write-Info 'Building the database from the bundled data'
-    $r = Invoke-Exe -File $venvPy -Arguments @('etl/load_seed.py') -WorkDir $Root
+    # --ensure builds the database only when there is none (or an old-format
+    # copy of the bundled data), so re-running the installer never replaces a
+    # real GBD import with the prototype data.
+    Write-Info 'Preparing the database (built from the bundled data on first install)'
+    $r = Invoke-Exe -File $venvPy -Arguments @('etl/load_seed.py', '--ensure') -WorkDir $Root
     if ($r.ExitCode -ne 0) {
-        Stop-WithError -Message 'The database could not be built.' -Hints @(
+        Stop-WithError -Message 'The database could not be prepared.' -Hints @(
             "ETL output follows:`n$($r.Output)"
         )
     }
-    Write-Ok 'Database built'
+    Write-Ok 'Database ready'
     return $venvPy
 }
 
@@ -482,6 +485,15 @@ echo   Starting $AppName...
 echo   Keep this window open while you use the dashboard.
 echo   Close it, or press Ctrl+C, to stop.
 echo.
+rem Same first step as `make run` and the container: make sure a usable
+rem database exists, without ever replacing a real GBD import.
+".venv\Scripts\python.exe" -m etl.load_seed --ensure
+if errorlevel 1 (
+  echo.
+  echo   The database is not ready -- read the message above.
+  pause
+  exit /b 1
+)
 start "" http://127.0.0.1:$Number
 ".venv\Scripts\python.exe" -m uvicorn app.main:app --host 127.0.0.1 --port $Number
 "@

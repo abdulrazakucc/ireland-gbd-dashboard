@@ -87,6 +87,11 @@ class TestContext:
             "Deaths · Rate (per 100,000) · All ages · Both · Ireland · 2020–2021"
         )
 
+    def test_a_unit_that_only_repeats_the_metric_is_not_shown_twice(self, multidim_client):
+        series_id = _find(multidim_client, measure="Life expectancy")["series_id"]
+        series = multidim_client.get("/api/trend", params={"series": series_id}).json()
+        assert figures.describe(series).startswith("Years · <1 year")
+
     def test_a_series_with_a_year_missing_its_interval_still_renders(self, multidim_client):
         series = _find(multidim_client, measure="Life expectancy")["series_id"]
         for fmt in ("png", "pdf"):

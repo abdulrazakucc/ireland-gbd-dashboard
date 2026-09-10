@@ -52,7 +52,7 @@ def describe(series: dict[str, Any]) -> str:
     parts = [
         series["measure"] if series["measure"] != series["title"] else None,
         f"{series['metric']} ({series['unit']})"
-        if series["unit"] != series["metric"]
+        if series["unit"].lower() != series["metric"].lower()
         else series["metric"],
         series["age"],
         series["sex"],

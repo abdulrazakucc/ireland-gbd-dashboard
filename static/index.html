@@ -962,7 +962,8 @@ const esc = (text) => String(text ?? "").replace(/[&<>"']/g,
 // Every dimension of a series that is not already its title.
 const describe = (d) => [
   d.measure !== d.title ? d.measure : null,
-  d.unit !== d.metric ? d.metric + " (" + d.unit + ")" : d.metric,
+  // "Rate (per 100,000)" adds information; "Years (years)" only repeats it.
+  d.unit.toLowerCase() !== d.metric.toLowerCase() ? d.metric + " (" + d.unit + ")" : d.metric,
   d.age, d.sex, d.location,
 ].filter(Boolean).join(" · ");
 

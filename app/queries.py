@@ -1,7 +1,7 @@
 """
 Every read the application makes, as plain functions over a database path.
 
-The HTTP routes, the figure renderer, the static-snapshot build and the
+The HTTP routes, the figure renderer and the
 importer's verification step all call these. So the question "what does the
 API return for this selection?" has exactly one answer, wherever it is asked.
 """

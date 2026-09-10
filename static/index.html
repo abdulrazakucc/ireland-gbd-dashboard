@@ -811,11 +811,9 @@
                  behind a UCC hostname. Set window.API_BASE to point at an
                  API on a different host.
 
-   * "static" -- a published snapshot (GitHub Pages), where no process exists
-                 to answer /api/.... scripts/build_static_site.py has written
-                 every answer to a file, and apiUrl() below maps each API
-                 path onto the file holding it. A snapshot holds whole series
-                 only, so the year-range filter is not offered there.
+   * "static" -- files only, no server. Not currently used: GitHub Pages
+                 publishes the landing page only, because results are for
+                 approved users. apiUrl() below maps API paths onto files.
 
    Everything after this block calls fetchJSON("/api/...") exactly as it
    would against the live API; only apiUrl() knows which shape is in play. */

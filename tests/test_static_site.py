@@ -1,129 +1,84 @@
 """
-Snapshot build tests.
+Public site tests.
 
-The published site on GitHub Pages is only as trustworthy as this build. These
-tests check the two things that would silently break it:
-
-* every file the dashboard can ask for exists in the output, under the exact
-  name ``apiUrl()`` in ``static/index.html`` constructs;
-* the snapshot carries the same values the live API returns, so publishing
-  cannot quietly change a figure.
+GBD results are available only to approved users, and a static site cannot
+check who is asking. So what GitHub Pages publishes must be the landing page
+and nothing else: no estimates, no exports, no figures, no dashboard code.
+These tests hold the build to that, and check its access links in both states.
 """
 
 from __future__ import annotations
 
-import json
 import re
 from pathlib import Path
 
 import pytest
-from fastapi.testclient import TestClient
 
-from scripts.build_static_site import RANK_KEYS
+from scripts.build_static_site import PUBLISHED, build, render_landing
 
 ROOT = Path(__file__).resolve().parent.parent
-INDEX = ROOT / "static" / "index.html"
+LANDING = ROOT / "static" / "landing.html"
+PENDING_TEXT = "Access requests open when the secure application launches"
 
 
 @pytest.fixture(scope="module")
-def site(tmp_path_factory: pytest.TempPathFactory, seed_db: Path) -> Path:
-    """Build a real snapshot of the seed database into a temporary directory, once."""
-    from scripts.build_static_site import build
-
+def site(tmp_path_factory: pytest.TempPathFactory) -> Path:
     out = tmp_path_factory.mktemp("site") / "out"
-    build(out, db_path=seed_db)
+    build(out)
     return out
 
 
-def _json(site: Path, relative: str):
-    return json.loads((site / "api" / relative).read_text())
+def _published(site: Path) -> set[str]:
+    return {str(p.relative_to(site)) for p in site.rglob("*") if p.is_file()}
 
 
-class TestSnapshotContents:
-    def test_dashboard_and_its_assets_are_copied(self, site: Path) -> None:
-        assert (site / "index.html").is_file()
-        assert (site / "assets" / "chart.umd.js").is_file()
+class TestPublishesOnlyTheLandingPage:
+    def test_only_the_landing_page_and_its_images_are_published(self, site: Path) -> None:
+        assert _published(site) == PUBLISHED
 
-    def test_config_switches_the_dashboard_into_static_mode(self, site: Path) -> None:
-        """Without this the published page would call an API that is not there."""
-        assert 'window.API_MODE = "static"' in (site / "config.js").read_text()
+    def test_no_results_or_dashboard_code_can_be_downloaded(self, site: Path) -> None:
+        assert not (site / "api").exists()
+        page = (site / "index.html").read_text()
+        for forbidden in ("chart.umd.js", "config.js", "fetch(", "/api/", "api/"):
+            assert forbidden not in page, f"landing page references {forbidden!r}"
 
-    def test_fixed_routes_are_present_and_are_valid_json(self, site: Path) -> None:
-        for route in ("health", "meta", "series", "dimensions", "ranked/options"):
-            assert _json(site, f"{route}.json")
-
-    def test_meta_records_release_source_and_when_the_snapshot_was_built(self, site) -> None:
-        """Provenance: a reader must be able to see how old the figures are."""
-        meta = _json(site, "meta.json")
-        assert meta["snapshot_built"] and meta["release"] and meta["imported_at"]
-        assert meta["source_files"][0]["sha256"]
-
-    def test_every_series_has_its_trend_csv_png_and_pdf(self, site: Path) -> None:
-        catalogue = _json(site, "series.json")
-        assert catalogue
-        for entry in catalogue:
-            sid = entry["series_id"]
-            assert _json(site, f"trend/{sid}.json")["series"]
-            assert (site / "api" / "export" / f"{sid}.csv").read_text().startswith("release,")
-            assert (site / "api" / "figure" / f"{sid}.png").read_bytes().startswith(b"\x89PNG")
-            assert (site / "api" / "figure" / f"{sid}.pdf").read_bytes().startswith(b"%PDF-")
-
-    def test_every_ranking_option_names_a_file_that_exists(self, site: Path) -> None:
-        options = _json(site, "ranked/options.json")
-        assert options
-        for option in options:
-            assert _json(site, option["file"])["items"]
+    def test_the_page_introduces_the_application_and_its_access_rule(self, site: Path) -> None:
+        page = (site / "index.html").read_text()
+        assert "Ireland Health Evidence" in page
+        assert "Results are available to approved users only." in page
+        assert "How access works" in page
 
     def test_pages_hygiene_files_exist(self, site: Path) -> None:
-        """.nojekyll stops Pages dropping files; 404.html catches stale links."""
+        """.nojekyll stops Pages running Jekyll; 404.html catches stale links."""
         assert (site / ".nojekyll").is_file()
-        assert (site / "404.html").is_file()
+        assert (site / "404.html").read_text() == (site / "index.html").read_text()
+
+    def test_asset_urls_are_relative(self, site: Path) -> None:
+        """A root-absolute URL would 404 under the /repo/ project-page prefix."""
+        page = (site / "index.html").read_text()
+        assert not re.findall(r'(?:src|href)="/(?!/)[^"]*"', page)
 
 
-class TestSnapshotMatchesTheLiveApi:
-    """The snapshot must not be able to drift from the API it was built from."""
+class TestAccessLinks:
+    def test_without_an_application_url_access_is_shown_as_not_yet_open(self, site) -> None:
+        page = (site / "index.html").read_text()
+        assert PENDING_TEXT in page
+        assert 'href="register"' not in page and 'href="login"' not in page
+        assert "ACCESS:" not in page
 
-    def test_series_values_and_intervals_are_identical(self, site, client: TestClient) -> None:
-        for entry in _json(site, "series.json"):
-            sid = entry["series_id"]
-            assert (
-                _json(site, f"trend/{sid}.json")
-                == client.get("/api/trend", params={"series": sid}).json()
-            )
-            assert (site / "api" / "export" / f"{sid}.csv").read_text() == client.get(
-                "/api/export.csv", params={"series": sid}
-            ).text
+    def test_with_an_application_url_the_links_point_at_it(self, tmp_path: Path) -> None:
+        build(tmp_path / "out", app_url="https://gbd.example.ucc.ie/")
+        page = (tmp_path / "out" / "index.html").read_text()
+        assert 'href="https://gbd.example.ucc.ie/register"' in page
+        assert 'href="https://gbd.example.ucc.ie/login"' in page
+        assert PENDING_TEXT not in page and "ACCESS:" not in page
 
-    def test_rankings_are_identical(self, site, client: TestClient) -> None:
-        for option in _json(site, "ranked/options.json"):
-            params = {k: option[k] for k in RANK_KEYS}
-            assert _json(site, option["file"]) == client.get("/api/ranked", params=params).json()
+    @pytest.mark.parametrize("bad", ["javascript:alert(1)", "gbd.example.ucc.ie", "ftp://x"])
+    def test_an_application_url_must_be_a_web_address(self, bad: str) -> None:
+        with pytest.raises(ValueError):
+            render_landing(LANDING.read_text(), app_url=bad)
 
-
-class TestDashboardAgreesWithTheBuild:
-    """The path mapping lives in two places; they must not disagree."""
-
-    def test_index_loads_config_before_it_reads_api_mode(self) -> None:
-        html = INDEX.read_text()
-        assert 0 < html.find('src="config.js"') < html.find("const STATIC =")
-
-    def test_index_maps_every_route_the_build_writes(self) -> None:
-        html = INDEX.read_text()
-        for expected in ('"api/trend/"', '"api/export/"', '"api/figure/"', '"api/" + hit.file'):
-            assert expected in html, f"apiUrl() no longer builds {expected}"
-
-    def test_index_looks_rankings_up_by_the_same_keys_the_build_uses(self) -> None:
-        match = re.search(r"const RANK_KEYS = \[([^\]]*)\]", INDEX.read_text())
-        assert match, "RANK_KEYS not found in index.html"
-        assert re.findall(r'"([a-z_]+)"', match.group(1)) == list(RANK_KEYS)
-
-    def test_published_snapshot_hides_the_api_reference(self) -> None:
-        """A static site has no API behind it, so listing endpoints there would be dead links."""
-        html = INDEX.read_text()
-        assert 'id="apiSection"' in html
-        assert '$("apiSection").hidden = STATIC;' in html
-
-    def test_index_uses_relative_urls_only(self) -> None:
-        """A root-absolute URL would 404 under a /repo/ project-page prefix."""
-        html = INDEX.read_text()
-        assert not re.findall(r'(?:src|href)="/(?!/)[^"]*"', html)
+    def test_every_access_block_in_the_source_is_closed(self) -> None:
+        source = LANDING.read_text()
+        for tag in ("ACCESS:LIVE", "ACCESS:PENDING"):
+            assert source.count(f"<!-- {tag} -->") == source.count(f"<!-- /{tag} -->") >= 1

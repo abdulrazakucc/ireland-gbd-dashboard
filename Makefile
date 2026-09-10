@@ -252,12 +252,12 @@ check: lint test ## Run lint and tests -- what CI runs
 
 ## ----------------------------------------------------------- publish ----
 
-site: setup-dev seed ## Build the static snapshot published to GitHub Pages
+site: setup ## Build the public landing page published to GitHub Pages
 	@$(PY) -m scripts.build_static_site --out $(SITE_DIR)
 	@echo "==> Preview it with: make site-serve"
 
-site-serve: site ## Build the snapshot and serve it exactly as Pages will
-	@echo "==> Snapshot on http://127.0.0.1:$(SITE_PORT)/  (Ctrl-C to stop)"
+site-serve: site ## Build the landing page and serve it exactly as Pages will
+	@echo "==> Landing page on http://127.0.0.1:$(SITE_PORT)/  (Ctrl-C to stop)"
 	@cd $(SITE_DIR) && $(realpath $(PY)) -m http.server $(SITE_PORT)
 
 ## --------------------------------------------------- data and cleanup ----

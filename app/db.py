@@ -39,7 +39,7 @@ SCHEMA_VERSION = 2
 #
 # series_id identifies one line on a chart: every dimension except year. It is
 # derived (see etl.gbd_import.series_id) and stored so the dashboard and the
-# static snapshot can address a series with one short, URL-safe token.
+# downloads can address a series with one short, URL-safe token.
 SCHEMA = """
 CREATE TABLE gbd_estimate (
     release    TEXT    NOT NULL,

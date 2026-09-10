@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ireland Health Evidence | UCC School of Public Health</title>
+<meta name="description" content="Global Burden of Disease evidence for Ireland from the School of Public Health, University College Cork. Access to results is by approval.">
+<link rel="icon" href="assets/ucc-logo.png">
+<script>
+  // Use the appearance a visitor chose in the dashboard, before first paint.
+  try { var t = localStorage.getItem("ucc-gbd-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+<!--
+  The public landing page. It holds no results and makes no API calls: GBD
+  results are available only to approved users of the application.
+
+  Its call to action exists in two marked versions, one of which is removed
+  when the page is published (see scripts/build_static_site.py): the live one
+  has "Request access" / "Sign in" buttons, for once the application is
+  hosted; the pending one says access opens when the application launches.
+  Design tokens, masthead and footer styles are copied from index.html.
+-->
+<style>
+  /* ------------------------------------------------------------------ *
+   * Design tokens.
+   *
+   * Series colours are the validated categorical slots 1-4; they were run
+   * through the palette validator in both modes (lightness band, chroma
+   * floor, protan/deutan separation, normal-vision floor, contrast).
+   * In light mode aqua and yellow sit below 3:1 on white, which is legal
+   * only with a relief channel -- every chart here ships visible value
+   * labels AND a table view, which is that relief.
+   *
+   * UCC brand colours (navy, gold, crest red/blue) are chrome only. They
+   * never encode data, so they are not part of the validated set.
+   * ------------------------------------------------------------------ */
+  :root {
+    color-scheme: light;
+
+    --ucc-navy:    #0f2942;
+    --ucc-navy-2:  #17456b;
+    --ucc-blue:    #1b5486;
+    --ucc-gold:    #ffb500;
+    --ucc-red:     #c8102e;
+    --accent-aqua: #5eead4;   /* masthead accent: badge + Ireland map */
+
+    --page:            #f4f6f8;
+    --surface-1:       #ffffff;
+    --surface-2:       #f7f8fa;
+    --surface-sunken:  #eef1f5;
+
+    --text-primary:   #14181d;
+    --text-secondary: #4d5561;
+    --text-muted:     #6b7480;
+    --text-onnavy:    #ffffff;
+    --text-onnavy-2:  #b9cbdd;
+
+    --grid:   #e7e9ee;
+    --axis:   #cfd4dc;
+    --border: rgba(16, 24, 40, 0.10);
+    --ring:   rgba(16, 24, 40, 0.06);
+
+    --series-1: #2a78d6;   /* blue    */
+    --series-2: #eb6834;   /* orange  */
+    --series-3: #1baf7a;   /* aqua    */
+    --series-4: #eda100;   /* yellow  */
+    --good:     #006300;
+    --danger:   #b3261e;
+
+    --shadow-sm: 0 1px 2px rgba(16,24,40,0.05);
+    --shadow-md: 0 4px 14px rgba(16,24,40,0.07), 0 1px 3px rgba(16,24,40,0.05);
+    --shadow-lg: 0 18px 40px rgba(15,41,66,0.16);
+    --radius: 14px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page:           #0d1117;
+      --surface-1:      #161b22;
+      --surface-2:      #1c222b;
+      --surface-sunken: #10151c;
+      --text-primary:   #e6edf3;
+      --text-secondary: #b0b9c4;
+      --text-muted:     #8b95a3;
+      --grid:   #262d38;
+      --axis:   #333c48;
+      --border: rgba(255,255,255,0.10);
+      --ring:   rgba(255,255,255,0.06);
+      --series-1: #3987e5;
+      --series-2: #d95926;
+      --series-3: #199e70;
+      --series-4: #c98500;
+      --good:     #0ca30c;
+      --danger:   #ff8a80;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+      --shadow-md: 0 4px 14px rgba(0,0,0,0.45);
+      --shadow-lg: 0 18px 40px rgba(0,0,0,0.55);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page:           #0d1117;
+    --surface-1:      #161b22;
+    --surface-2:      #1c222b;
+    --surface-sunken: #10151c;
+    --text-primary:   #e6edf3;
+    --text-secondary: #b0b9c4;
+    --text-muted:     #8b95a3;
+    --grid:   #262d38;
+    --axis:   #333c48;
+    --border: rgba(255,255,255,0.10);
+    --ring:   rgba(255,255,255,0.06);
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --good:     #0ca30c;
+    --danger:   #ff8a80;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+    --shadow-md: 0 4px 14px rgba(0,0,0,0.45);
+    --shadow-lg: 0 18px 40px rgba(0,0,0,0.55);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page);
+    color: var(--text-primary);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 28px; }
+
+  /* ---------------------------------------------------------- header --- */
+
+  .masthead {
+    background:
+      radial-gradient(1100px 420px at 88% -30%, rgba(255,181,0,0.22), transparent 62%),
+      linear-gradient(135deg, var(--ucc-navy) 0%, var(--ucc-navy-2) 58%, var(--ucc-blue) 100%);
+    color: var(--text-onnavy);
+    border-bottom: 3px solid var(--ucc-gold);
+    position: relative;
+    overflow: hidden;
+  }
+  .masthead::after {
+    content: "";
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px);
+    background-size: 46px 46px;
+    pointer-events: none;
+  }
+  .masthead .wrap { position: relative; z-index: 1; }
+
+  .masthead-top {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 24px; flex-wrap: wrap; padding: 15px 0 15px;
+  }
+
+  /* Left: UCC identity. The logo is the largest element in the masthead. */
+  .brand { display: flex; align-items: center; gap: 16px; min-width: 0; }
+  .brand-logo {
+    height: 58px; width: auto; display: block;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.34);
+  }
+  .brand-rule {
+    width: 1px; align-self: stretch; margin: 4px 0;
+    background: linear-gradient(180deg, transparent, rgba(255,255,255,0.30), transparent);
+  }
+  .brand-text h1 {
+    margin: 0; font-size: 22px; font-weight: 680; letter-spacing: -0.025em; line-height: 1.12;
+  }
+  .brand-text .eyebrow {
+    margin: 0 0 3px; font-size: 9.5px; font-weight: 700;
+    letter-spacing: 0.15em; text-transform: uppercase; color: var(--ucc-gold);
+  }
+  .brand-text .sub { margin: 3px 0 0; font-size: 12px; color: var(--text-onnavy-2); }
+
+  /* Right: principal investigator. The whole card links to the UCC profile. */
+  .pi-card {
+    position: relative;
+    display: flex; align-items: center; gap: 13px;
+    background:
+      radial-gradient(150% 120% at 0% 0%, rgba(255,181,0,0.16), transparent 58%),
+      linear-gradient(135deg, rgba(255,255,255,0.16), rgba(255,255,255,0.07));
+    border: 1px solid rgba(255,255,255,0.26);
+    border-radius: 13px;
+    padding: 10px 16px 10px 14px;
+    min-width: 0;
+    text-decoration: none; color: inherit;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.16);
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  }
+  /* Gold spine down the leading edge. */
+  .pi-card::before {
+    content: ""; position: absolute; left: 0; top: 9px; bottom: 9px; width: 2.5px;
+    border-radius: 0 3px 3px 0;
+    background: linear-gradient(180deg, var(--ucc-gold), #ff8a00);
+    box-shadow: 0 0 14px rgba(255,181,0,0.55);
+  }
+  .pi-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(255,181,0,0.60);
+    box-shadow: 0 18px 42px rgba(0,0,0,0.38), 0 0 26px rgba(255,181,0,0.20),
+                inset 0 1px 0 rgba(255,255,255,0.20);
+  }
+  /* Photo in a gold gradient ring. */
+  .pi-photo-ring {
+    flex: none; padding: 2px; border-radius: 12px;
+    background: linear-gradient(150deg, #ffd166, var(--ucc-gold) 45%, #e08a00);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.34), 0 0 12px rgba(255,181,0,0.24);
+  }
+  .pi-photo {
+    display: block;
+    width: 62px; height: 62px;
+    border-radius: 10px;
+    object-fit: cover; object-position: center 18%;
+    background: rgba(255,255,255,0.10);
+  }
+  /* "Principal Investigator" as a solid badge. As plain gold text it measured
+     4.31:1 on this card's background -- under the 4.5:1 bar for small text,
+     which is why it read as washed out. Dark ink on a bright aqua chip
+     measures 11.2:1 and is unmissable. */
+  .pi-card .pi-role {
+    display: inline-block;
+    font-size: 8.5px; font-weight: 800; letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: #06283d;
+    background: linear-gradient(135deg, var(--accent-aqua) 0%, #67e8f9 100%);
+    padding: 2.5px 8px; border-radius: 999px;
+    margin-bottom: 4px;
+    box-shadow: 0 2px 9px rgba(94,234,212,0.36);
+  }
+  .pi-card .pi-name {
+    font-size: 16px; font-weight: 720; letter-spacing: -0.022em;
+    line-height: 1.15; color: #fff;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.35);
+  }
+  /* Short gold rule under the name. */
+  .pi-card .pi-name::after {
+    content: ""; display: block; width: 32px; height: 2px; border-radius: 2px;
+    margin: 4px 0 4px;
+    background: linear-gradient(90deg, var(--ucc-gold), rgba(255,181,0,0));
+    transition: width .25s ease;
+  }
+  .pi-card:hover .pi-name::after { width: 58px; }
+  .pi-card .pi-line { font-size: 11px; line-height: 1.4; color: #dbe7f3; margin-top: 1px; }
+  /* Profile link as a solid call-to-action: navy on gold, 9.4:1. */
+  .pi-card .pi-link {
+    margin-top: 7px;
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 10px; font-weight: 750; letter-spacing: 0.02em;
+    color: #14202b;
+    background: linear-gradient(135deg, #ffc93c, var(--ucc-gold));
+    padding: 4px 10px; border-radius: 999px;
+    box-shadow: 0 2px 9px rgba(255,181,0,0.30);
+    transition: transform .18s ease, box-shadow .18s ease;
+  }
+  .pi-card:hover .pi-link {
+    transform: translateX(3px);
+    box-shadow: 0 5px 18px rgba(255,181,0,0.50);
+  }
+
+  /* Hero figure -- exactly one per view. Sized to sit below the logo and the
+     PI card in the masthead's visual hierarchy, not to out-shout them. */
+  .masthead-hero {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 14px; flex-wrap: wrap;
+    padding: 0 0 14px;
+    border-top: 1px solid rgba(255,255,255,0.12);
+    padding-top: 13px;
+  }
+  .hero-figure .hero-label {
+    font-size: 10px; letter-spacing: 0.09em; text-transform: uppercase;
+    color: var(--text-onnavy-2); margin-bottom: 2px;
+  }
+  .hero-figure .hero-value {
+    font-size: 28px; font-weight: 680; line-height: 1.05; letter-spacing: -0.025em;
+  }
+  .hero-figure .hero-value .hero-unit {
+    font-size: 13px; font-weight: 500; color: var(--text-onnavy-2); margin-left: 6px;
+    letter-spacing: 0;
+  }
+  .hero-figure .hero-delta { font-size: 11.5px; color: var(--text-onnavy-2); margin-top: 3px; }
+  .hero-figure .hero-delta strong { color: var(--ucc-gold); font-weight: 650; }
+
+  /* Republic of Ireland outline: Natural Earth 10m boundary, projected
+     equirectangular with x compressed by cos(53.4 deg) so the island keeps
+     its true proportions, then simplified to 138 points. */
+  /* Ireland panel, sitting beside the UCC logo. Same height and corner radius
+     as the logo so the two read as a matched pair. */
+  .map-panel {
+    position: relative; flex: none;
+    width: 58px; height: 58px;
+    border-radius: 8px;
+    background:
+      radial-gradient(120% 100% at 50% 0%, rgba(94,234,212,0.16), transparent 70%),
+      linear-gradient(160deg, rgba(255,255,255,0.13), rgba(255,255,255,0.05));
+    border: 1px solid rgba(94,234,212,0.35);
+    box-shadow: 0 6px 22px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.14);
+    display: grid; place-items: center;
+    overflow: hidden;
+    transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+  }
+  .map-panel:hover {
+    transform: translateY(-2px);
+    border-color: rgba(94,234,212,0.65);
+    box-shadow: 0 10px 28px rgba(0,0,0,0.36), 0 0 22px rgba(94,234,212,0.22),
+                inset 0 1px 0 rgba(255,255,255,0.18);
+  }
+  /* Faint latitude/longitude rule behind the island. */
+  .map-panel::before {
+    content: ""; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.10) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.10) 1px, transparent 1px);
+    background-size: 14px 14px;
+    opacity: 0.45;
+  }
+  .map-panel svg { position: relative; width: 48px; height: 48px; overflow: visible; }
+  .map-shape {
+    fill: url(#ie-fill);
+    stroke: rgba(255,255,255,0.55); stroke-width: 1.1;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.45));
+  }
+  /* Cork -- where UCC is. */
+  .map-pin {
+    fill: var(--ucc-gold);
+    stroke: rgba(20,32,43,0.85); stroke-width: 0.9;
+    filter: drop-shadow(0 0 5px rgba(255,181,0,0.85));
+  }
+  .map-pin-ring { fill: none; stroke: var(--ucc-gold); stroke-width: 1.8; opacity: 0.9; }
+  @media (prefers-reduced-motion: no-preference) {
+    .map-pin-ring { animation: pin-pulse 2.8s ease-out infinite; transform-origin: 46.5px 86.2px; }
+  }
+  @keyframes pin-pulse {
+    0%   { r: 3;  opacity: 0.85; }
+    70%  { r: 11; opacity: 0; }
+    100% { r: 11; opacity: 0; }
+  }
+
+  .map-icon {
+    width: 18px; height: 18px; flex: none;
+    fill: var(--accent-aqua);
+  }
+  .chip.place {
+    background: rgba(94,234,212,0.14);
+    border-color: rgba(94,234,212,0.42);
+    font-weight: 600;
+  }
+
+  .chips { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.11);
+    border: 1px solid rgba(255,255,255,0.20);
+    border-radius: 999px; padding: 4.5px 11px;
+    font-size: 11px; color: #fff; white-space: nowrap;
+  }
+  .chip.alert { background: rgba(200,16,46,0.30); border-color: rgba(255,140,140,0.5); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ucc-gold); flex: none; }
+  .dot.live { background: #4ade80; box-shadow: 0 0 0 3px rgba(74,222,128,0.22); }
+  .dot.down { background: #ff7b7b; box-shadow: 0 0 0 3px rgba(255,123,123,0.22); }
+
+  /* ----------------------------------------------------------- cards --- */
+
+  .card {
+    position: relative;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    padding: 20px 22px 18px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  /* A hairline of the card's accent along the top edge. */
+  .card::before {
+    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent, var(--series-1)), transparent 62%);
+    opacity: 0.85;
+  }
+  .card-head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 18px; flex-wrap: wrap; margin-bottom: 16px;
+  }
+  .card h2 {
+    font-size: 16.5px; margin: 0; font-weight: 650; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 9px;
+  }
+  .card h2 .accent-bar { width: 3px; height: 17px; border-radius: 2px; background: var(--accent, var(--series-1)); }
+  .card .desc { font-size: 13px; color: var(--text-secondary); margin: 5px 0 0 12px; }
+  .card-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  .chart-wrap { position: relative; width: 100%; height: 320px; }
+  .chart-wrap.tall { height: 430px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px; font-size: 12.5px; color: var(--text-secondary); }
+  .legend .key { display: inline-flex; align-items: center; gap: 7px; }
+  .legend .key i { width: 14px; height: 3px; border-radius: 2px; background: var(--accent); display: inline-block; }
+  .legend .key.band i { height: 11px; border-radius: 3px; opacity: 0.25; }
+  .source-note { font-size: 11.5px; color: var(--text-muted); margin-top: 12px; }
+
+  /* Table view -- the relief channel for the sub-3:1 light-mode hues, and
+     the WCAG-clean twin of every chart. */
+  .table-wrap { overflow-x: auto; margin-top: 4px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  caption { text-align: left; font-size: 12px; color: var(--text-muted); padding-bottom: 8px; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--grid); }
+  th { font-size: 11px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-muted); font-weight: 600; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tbody tr:hover { background: var(--surface-2); }
+  [hidden] { display: none !important; }
+
+
+  /* --------------------------------------------------------- landing --- */
+
+  /* .wrap sets horizontal padding on main; set the vertical padding without undoing it. */
+  main.wrap { padding-top: 24px; padding-bottom: 56px; }
+
+  .landing-hero { align-items: center; }
+  .landing-hero .lead {
+    margin: 2px 0 0; max-width: 660px;
+    font-size: 15px; line-height: 1.55; color: var(--text-onnavy);
+  }
+
+  .eyebrow-label {
+    display: block; margin-bottom: 6px;
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.11em;
+    text-transform: uppercase; color: var(--text-muted);
+  }
+
+  .intro { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 30px; align-items: start; }
+  .intro h2 { font-size: 21px; line-height: 1.3; align-items: flex-start; }
+  .intro h2 .accent-bar { margin-top: 5px; flex: none; }
+  .intro p { margin: 12px 0 0 12px; font-size: 14.5px; line-height: 1.65; color: var(--text-secondary); }
+
+  .access-panel {
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px 20px;
+  }
+  .access-panel strong { display: block; font-size: 15px; color: var(--text-primary); }
+  .access-panel p { margin: 8px 0 0; font-size: 13.5px; line-height: 1.55; color: var(--text-secondary); }
+
+  .cta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    font: inherit; font-size: 14px; font-weight: 600; text-decoration: none;
+    padding: 10px 18px; border-radius: 10px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface-1); color: var(--text-primary);
+    transition: background .15s, border-color .15s, transform .15s;
+  }
+  .btn:hover { border-color: var(--axis); transform: translateY(-1px); }
+  .btn.primary { background: var(--ucc-navy-2); border-color: var(--ucc-navy-2); color: #fff; }
+  .btn.primary:hover { background: var(--ucc-blue); border-color: var(--ucc-blue); }
+  .btn:focus-visible, a:focus-visible { outline: 2px solid var(--series-1); outline-offset: 2px; }
+
+  .access-note {
+    margin: 16px 0 0; padding: 12px 14px; border-radius: 10px;
+    font-size: 13.5px; line-height: 1.5; color: var(--text-secondary);
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-left: 3px solid var(--ucc-gold);
+  }
+  .access-note a { color: var(--series-1); }
+
+  .section-title {
+    margin: 8px 0 14px; font-size: 12px; font-weight: 700; letter-spacing: 0.11em;
+    text-transform: uppercase; color: var(--text-muted);
+  }
+
+  .features {
+    display: grid; gap: 16px; margin-bottom: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+  .feature {
+    position: relative; overflow: hidden;
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow-sm);
+    padding: 18px 20px 18px 22px;
+  }
+  .feature::before {
+    content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--accent);
+  }
+  .feature h3 { margin: 0 0 7px; font-size: 15px; font-weight: 650; color: var(--text-primary); }
+  .feature p { margin: 0; font-size: 13.5px; line-height: 1.55; color: var(--text-secondary); }
+
+  .steps {
+    list-style: none; counter-reset: step; margin: 4px 0 0; padding: 0;
+    display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+  .steps li {
+    counter-increment: step; position: relative;
+    padding: 14px 16px 14px 56px; border-radius: 11px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    font-size: 13.5px; line-height: 1.5; color: var(--text-secondary);
+  }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 15px; top: 14px;
+    width: 28px; height: 28px; border-radius: 50%;
+    display: grid; place-items: center;
+    background: var(--series-1); color: #fff; font-size: 13px; font-weight: 700;
+  }
+  .steps strong { display: block; margin-bottom: 3px; color: var(--text-primary); font-size: 14px; }
+
+  .two-col { display: grid; gap: 26px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .two-col h3 { margin: 0 0 8px; font-size: 15px; font-weight: 650; color: var(--text-primary); }
+  .two-col p { margin: 0 0 10px; font-size: 13.5px; line-height: 1.6; color: var(--text-secondary); }
+  .two-col a { color: var(--series-1); }
+
+  @media (max-width: 860px) {
+    .intro { grid-template-columns: 1fr; }
+  }
+
+  /* ---------------------------------------------------------- footer --- */
+
+  footer {
+    border-top: 1px solid var(--border);
+    background: var(--surface-1);
+    padding: 26px 0 34px;
+  }
+  .foot-grid {
+    display: grid; gap: 22px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    font-size: 12.5px; color: var(--text-secondary);
+  }
+  .foot-grid h3 {
+    font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-muted); margin: 0 0 8px; font-weight: 700;
+  }
+  .foot-grid a { color: var(--series-1); text-decoration: none; }
+  .foot-grid a:hover { text-decoration: underline; }
+  .foot-cite { margin: 8px 0 0; font-size: 11.5px; color: var(--text-muted); }
+  .foot-note {
+    margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--grid);
+    font-size: 11.5px; color: var(--text-muted);
+    display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  }
+
+  @media (max-width: 720px) {
+    .wrap { padding: 0 18px; }
+    .masthead-top { padding: 12px 0; gap: 14px; }
+    .brand { gap: 12px; }
+    .brand-logo { height: 46px; }
+    .brand-text h1 { font-size: 18px; }
+    .hero-figure .hero-value { font-size: 25px; }
+    .pi-card { width: 100%; }
+    .pi-photo { width: 52px; height: 52px; }
+    .pi-card .pi-name { font-size: 15px; }
+    .pi-card .pi-line { font-size: 10.5px; }
+    .chip { font-size: 10px; padding: 3.5px 9px; gap: 5px; }
+    .chips { gap: 6px; }
+    .hero-figure .hero-delta { font-size: 10.5px; }
+    .masthead-hero { padding-top: 11px; padding-bottom: 11px; }
+    .map-panel { width: 46px; height: 46px; }
+    .map-panel svg { width: 38px; height: 38px; }
+    select { min-width: 0; width: 100%; }
+    .field { width: 100%; }
+    .filters { grid-template-columns: 1fr 1fr; }
+    .filters .wide { grid-column: span 2; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+    .tile:hover { transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="ie-fill" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0%"   stop-color="#8ff5e4"/>
+      <stop offset="55%"  stop-color="#5eead4"/>
+      <stop offset="100%" stop-color="#2bb8a3"/>
+    </linearGradient>
+  </defs>
+  <symbol id="ie-map" viewBox="0 0 100 100">
+    <path d="M63.9 10.6 L61.7 12.1 L59.7 18.4 L54.2 19.5 L57.4 21.7 L50.8 25.1 L55.3 31 L62.8 33.4 L67.2 26.2 L72.6 32.1 L72.7 35.1 L76.6 33.4 L80.2 35.7 L76.6 35.7 L76.3 37.6 L80.6 46.7 L78.9 48.9 L80.8 51.2 L78.6 51.6 L81.8 60.9 L76.5 75.6 L74.6 75.1 L76.7 79.1 L70.2 78.7 L70.8 77.5 L68.4 80.8 L67.5 76.9 L67.2 80.5 L58.9 81.4 L59.1 84 L55.4 84.3 L52.9 88 L49.7 88.5 L50.6 86.3 L47.1 86.5 L49 89.4 L45.3 90.8 L45.7 93.1 L42.5 92.2 L43.3 93.9 L37.3 94.2 L34 96.3 L32.7 94.3 L27.3 97 L31.2 93.1 L27 94.5 L32.7 90.5 L31 89.5 L30.1 91.3 L22.5 93.6 L30.8 86.7 L22.9 90 L19.2 86.5 L28.2 80.2 L18.6 81.5 L18.2 79.5 L23.9 76.4 L28.5 77.9 L25.5 73.9 L30 72.5 L29.8 70.2 L42.6 67.7 L39.6 67.2 L39.8 65.3 L34.9 69.7 L30.8 67.9 L25.7 70.5 L31.9 65.8 L35.1 56.4 L38 57.1 L37.2 56.1 L39.9 56.4 L40.5 54.7 L38.4 54.7 L38.7 53.4 L31.7 54.5 L31.1 53 L30.3 54.3 L31.1 50.7 L27.5 52.7 L26.2 52.2 L27.6 49.9 L22.3 50.1 L24.6 48.4 L22.2 46.7 L29.1 45.7 L26.1 44.5 L26.1 41.7 L31 40.9 L31 39.3 L25.6 38.9 L26 37.2 L27.8 38.1 L26.2 35.5 L27.2 33.4 L25.2 34.2 L24.6 30.9 L23.1 33.8 L23.2 30.5 L24.8 28.8 L26.1 31.2 L28.1 30 L27.8 28 L35.2 28.8 L37 32.6 L38.3 29.2 L46 31.1 L44.4 30 L46.5 29.5 L45.9 28.3 L43.8 27.5 L50.2 24.1 L51.5 20.6 L46.7 22.6 L47.3 20.8 L43.7 21.3 L41.9 19.6 L47.4 17.9 L45.3 16.6 L46.3 15.7 L48.6 16.2 L46.7 12.1 L49.3 8.4 L51 9.2 L53.6 6.9 L55.3 8.9 L56.1 6.1 L57.5 9.9 L56.2 7 L58.3 5.7 L60 9.4 L58 13.2 L61 10.9 L60 5.3 L63.8 5.4 L62 3 L68.3 6.5 L63.9 10.6 Z"/>
+  </symbol>
+</svg>
+
+<header class="masthead">
+  <div class="wrap">
+
+    <div class="masthead-top">
+      <!-- Left: UCC identity -->
+      <div class="brand">
+        <img class="brand-logo" src="assets/ucc-logo.png"
+             alt="University College Cork - Colaiste na hOllscoile Corcaigh">
+
+        <div class="map-panel" role="img"
+             aria-label="Map of the Republic of Ireland, with Cork marked">
+          <svg viewBox="0 0 100 100">
+            <title>Republic of Ireland &mdash; Cork marked</title>
+            <use class="map-shape" href="#ie-map"/>
+            <circle class="map-pin-ring" cx="46.5" cy="86.2" r="3"/>
+            <circle class="map-pin" cx="46.5" cy="86.2" r="3.8"/>
+          </svg>
+        </div>
+
+        <div class="brand-rule"></div>
+        <div class="brand-text">
+          <p class="eyebrow">School of Public Health</p>
+          <h1>Ireland Health Evidence</h1>
+          <p class="sub">Global Burden of Disease Study</p>
+        </div>
+      </div>
+
+      <!-- Right: principal investigator, linked to the UCC research profile -->
+      <a class="pi-card" href="https://research.ucc.ie/en/persons/zubair-kabir/"
+         target="_blank" rel="noopener noreferrer">
+        <span class="pi-photo-ring">
+          <img class="pi-photo" src="assets/zubair-kabir.png" alt="Dr. Zubair Kabir">
+        </span>
+        <div class="pi-body">
+          <div class="pi-role">Principal Investigator</div>
+          <div class="pi-name">Dr. Zubair Kabir</div>
+          <div class="pi-line">Senior Lecturer, School of Public Health</div>
+          <div class="pi-line">University College Cork, Cork, Ireland</div>
+          <div class="pi-link">UCC research profile <span aria-hidden="true">&#8599;</span></div>
+        </div>
+      </a>
+    </div>
+
+    <div class="masthead-hero landing-hero">
+      <div class="hero-figure">
+        <div class="hero-label">Global Burden of Disease &middot; Ireland</div>
+        <p class="lead">Trends, leading causes and risk factors for Ireland&rsquo;s health, with
+          their uncertainty intervals and citable downloads.</p>
+      </div>
+      <div class="chips">
+        <span class="chip place"><svg class="map-icon" aria-hidden="true" focusable="false"><use href="#ie-map"/></svg>Republic of Ireland</span>
+        <span class="chip"><span class="dot"></span>Access by approval</span>
+        <span class="chip"><span class="dot"></span>Source: IHME GBD</span>
+      </div>
+    </div>
+
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="card intro" style="--accent: var(--series-1);" aria-labelledby="introTitle">
+    <div>
+      <h2 id="introTitle"><span class="accent-bar"></span>Evidence on Ireland&rsquo;s health, from the Global Burden of Disease Study</h2>
+      <p>Ireland Health Evidence brings the Global Burden of Disease (GBD) estimates for Ireland,
+        published by the Institute for Health Metrics and Evaluation (IHME), together in one place:
+        how health, disease and risk factors have changed over time, and which causes and risks
+        weigh most on the population today.</p>
+      <p>It is developed by the School of Public Health at University College Cork. Every figure
+        keeps its GBD release, uncertainty interval and source file, so it can be interpreted
+        &mdash; and cited &mdash; with care.</p>
+    </div>
+    <aside class="access-panel" aria-labelledby="accessTitle">
+      <span class="eyebrow-label">Access</span>
+      <strong id="accessTitle">Results are available to approved users only.</strong>
+      <p>Create an account and tell us how you intend to use the data. Every request is reviewed
+        individually by the research team.</p>
+      <!-- ACCESS:LIVE -->
+      <div class="cta">
+        <a class="btn primary" href="register">Request access</a>
+        <a class="btn" href="login">Sign in</a>
+      </div>
+      <!-- /ACCESS:LIVE -->
+      <!-- ACCESS:PENDING -->
+      <p class="access-note">
+        Access requests open when the secure application launches. Until then, questions
+        about access can go to the
+        <a href="https://research.ucc.ie/en/persons/zubair-kabir/" target="_blank" rel="noopener noreferrer">research lead</a>.
+      </p>
+      <!-- /ACCESS:PENDING -->
+    </aside>
+  </section>
+
+  <h2 class="section-title">What the application provides</h2>
+  <section class="features" aria-label="What the application provides">
+    <article class="feature" style="--accent: var(--series-1);">
+      <h3>Trends over time</h3>
+      <p>Follow any GBD measure for Ireland by cause, risk factor, metric, age and sex, with its
+        95% uncertainty interval drawn around the estimate.</p>
+    </article>
+    <article class="feature" style="--accent: var(--series-2);">
+      <h3>Leading causes and risks</h3>
+      <p>See which causes of disease and which risk factors rank highest, for the year and
+        population group you choose.</p>
+    </article>
+    <article class="feature" style="--accent: var(--series-3);">
+      <h3>Citable downloads</h3>
+      <p>Download the values behind every chart as CSV, or as PNG and PDF figures that carry the
+        GBD release and the IHME citation.</p>
+    </article>
+    <article class="feature" style="--accent: var(--series-4);">
+      <h3>Traceable to the source</h3>
+      <p>Every dataset records its GBD release, the files it was built from, with checksums, and
+        when it was last updated.</p>
+    </article>
+  </section>
+
+  <section class="card" style="--accent: var(--series-3);" aria-labelledby="stepsTitle">
+    <div class="card-head">
+      <div>
+        <h2 id="stepsTitle"><span class="accent-bar"></span>How access works</h2>
+        <p class="desc">Access is granted to individuals, one request at a time.</p>
+      </div>
+    </div>
+    <ol class="steps">
+      <li><strong>Create an account</strong>Your name, email address, organisation and how you
+        intend to use the data.</li>
+      <li><strong>Confirm your email</strong>A link confirms that the address belongs to you.</li>
+      <li><strong>Your request is reviewed</strong>A member of the research team reviews each
+        request individually.</li>
+      <li><strong>Start exploring</strong>Once approved, sign in to use the dashboard and download
+        results.</li>
+    </ol>
+  </section>
+
+  <section class="card two-col" style="--accent: var(--series-4);" aria-label="About the data and your information">
+    <div>
+      <h3>About the data</h3>
+      <p>Estimates come from the
+        <a href="https://vizhub.healthdata.org/gbd-results/" target="_blank" rel="noopener">IHME Global Burden of Disease Results Tool</a>
+        and are used under IHME&rsquo;s
+        <a href="https://www.healthdata.org/gbd/about/data-terms" target="_blank" rel="noopener">Free-to-Use Data Terms</a>.
+        GBD is published in rounds, and the application records which release each figure comes from.</p>
+      <p>While the application is in development it runs on prototype data, and figures produced
+        from it are marked as not for citation.</p>
+    </div>
+    <div>
+      <h3>Your information</h3>
+      <p>Registration asks for your name, email address, organisation and intended use, so that
+        access can be reviewed and managed.</p>
+      <p>A privacy notice setting out how this information is used, stored and deleted will be
+        published before registration opens.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <h3>Research lead</h3>
+        <strong>Dr. Zubair Kabir</strong><br>
+        Senior Lecturer, School of Public Health<br>
+        University College Cork, Cork, Ireland<br>
+        <a href="https://research.ucc.ie/en/persons/zubair-kabir/"
+           target="_blank" rel="noopener noreferrer">UCC research profile &#8599;</a>
+      </div>
+      <div>
+        <h3>Data source</h3>
+        Institute for Health Metrics and Evaluation (IHME),
+        <a href="https://vizhub.healthdata.org/gbd-results/" target="_blank" rel="noopener">Global Burden of Disease Results Tool</a>.
+        Used under IHME's
+        <a href="https://www.healthdata.org/gbd/about/data-terms" target="_blank" rel="noopener">Free-to-Use Data Terms</a>.
+      </div>
+      <div>
+        <h3>About</h3>
+        Developed by the School of Public Health, University College Cork. Results are
+        available to approved users of the application only.
+      </div>
+    </div>
+    <div class="foot-note">
+      <span>Ireland Health Evidence &mdash; UCC School of Public Health.</span>
+      <span>Not for clinical or diagnostic use.</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

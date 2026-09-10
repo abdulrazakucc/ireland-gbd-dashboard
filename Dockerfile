@@ -7,9 +7,12 @@ FROM python:3.12-slim
 
 # PYTHONDONTWRITEBYTECODE: no .pyc clutter in the image.
 # PYTHONUNBUFFERED:        logs appear immediately in `docker compose logs`.
+# MPLCONFIGDIR:            matplotlib's font cache; compose runs as a host UID
+#                          with no home directory, so point it somewhere writable.
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    GBD_DB_PATH=/srv/data/gbd.db
+    GBD_DB_PATH=/srv/data/gbd.db \
+    MPLCONFIGDIR=/tmp/matplotlib
 
 WORKDIR /srv
 

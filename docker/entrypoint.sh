@@ -20,11 +20,10 @@ if [ ! -w "$DB_DIR" ]; then
   exit 1
 fi
 
-if [ ! -f "$DB" ]; then
-  echo "==> No database at $DB -- seeding from the bundled CSVs"
-  python -m etl.load_seed
-else
-  echo "==> Using existing database at $DB"
-fi
+# Seed if there is no database, rebuild an old-format copy of the seed data,
+# and otherwise leave the database alone. An old-format database holding a
+# real GBD import stops the container with instructions, rather than being
+# silently replaced by prototype numbers.
+python -m etl.load_seed --ensure
 
 exec "$@"

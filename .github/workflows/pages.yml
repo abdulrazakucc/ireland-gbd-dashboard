@@ -58,26 +58,25 @@ jobs:
           test -f site/.nojekyll
           test -f site/404.html
           grep -q 'window.API_MODE = "static"' site/config.js
-          for route in health meta indicators manifest; do
+          for route in health meta series dimensions manifest ranked/options; do
             test -s "site/api/$route.json"
-          done
-          for type in causes risks; do
-            test -s "site/api/ranked/$type.json"
           done
           python - <<'PY'
           import json, pathlib, sys
-          site = pathlib.Path("site")
-          ids = [i["indicator_id"] for i in json.loads((site / "api/indicators.json").read_text())]
+          api = pathlib.Path("site/api")
+          ids = [s["series_id"] for s in json.loads((api / "series.json").read_text())]
           if not ids:
-              sys.exit("no indicators in the snapshot")
-          missing = [
-              str(p) for i in ids
-              for p in (site / f"api/trend/{i}.json", site / f"api/export/{i}.csv")
-              if not p.is_file() or p.stat().st_size == 0
+              sys.exit("no series in the snapshot")
+          wanted = [
+              api / f"{kind}/{sid}.{ext}"
+              for sid in ids
+              for kind, ext in (("trend", "json"), ("export", "csv"), ("figure", "png"), ("figure", "pdf"))
           ]
+          wanted += [api / o["file"] for o in json.loads((api / "ranked/options.json").read_text())]
+          missing = [str(p) for p in wanted if not p.is_file() or p.stat().st_size == 0]
           if missing:
-              sys.exit("incomplete snapshot: " + ", ".join(missing))
-          print(f"Snapshot verified: {len(ids)} indicators, {sum(1 for _ in site.rglob('*') if _.is_file())} files")
+              sys.exit("incomplete snapshot: " + ", ".join(missing[:20]))
+          print(f"Snapshot verified: {len(ids)} series, {len(wanted)} data files")
           PY
 
       - uses: actions/configure-pages@v5

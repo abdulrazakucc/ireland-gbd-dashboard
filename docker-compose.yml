@@ -27,6 +27,9 @@ services:
       # the host share one file: `make refresh` on the host is visible here
       # without a rebuild.
       GBD_DB_PATH: /srv/data/gbd.db
+      # Optional; set them in .env (see .env.example). Empty CORS = none.
+      GBD_ROUND: ${GBD_ROUND:-GBD 2023}
+      GBD_CORS_ORIGINS: ${GBD_CORS_ORIGINS:-}
     volumes:
       - ./data:/srv/data
       # Read-only: the dashboard is served, never written to. Mounting it means

@@ -141,21 +141,20 @@ $(VENV)/.installed-dev: requirements-dev.txt $(VENV)/.installed
 	@touch $@
 	@echo "==> Ready. Run: make check"
 
-seed: $(DB) ## Build the database from the seed CSVs (skipped if up to date)
+# Never replaces a real GBD import: only builds a database when there is none,
+# or when an old-format copy of the seed data needs rebuilding.
+seed: setup ## Build the database from the seed data (skipped if one exists)
+	@$(PY) -m etl.load_seed --ensure
 
-$(DB): $(VENV)/.installed etl/load_seed.py data/gbd_seed.csv data/gbd_ranked_seed.csv
-	@echo "==> Seeding database"
+reseed: setup ## Replace the database with the seed data (keeps gbd.db.previous)
 	@$(PY) -m etl.load_seed
 
-reseed: setup ## Rebuild the database from scratch
-	@rm -f $(DB)
-	@$(MAKE) --no-print-directory seed
-
-run: $(DB) ## Start the app in the background
+run: seed ## Start the app in the background
 	@$(MAKE) --no-print-directory stop
 	@mkdir -p $(RUN_DIR)
 	@echo "==> Starting app on :$(PORT)"
-	@nohup $(UVICORN) app.main:app --host 127.0.0.1 --port $(PORT) \
+	@nohup $(UVICORN) app.main:app $(if $(wildcard .env),--env-file .env,) \
+		--host 127.0.0.1 --port $(PORT) \
 		> $(RUN_DIR)/app.log 2>&1 & echo $$! > $(RUN_DIR)/app.pid
 	@$(MAKE) --no-print-directory wait-api \
 		|| { echo "!! App did not start -- see $(RUN_DIR)/app.log"; exit 1; }
@@ -224,27 +223,36 @@ format: setup-dev ## Auto-fix formatting and import order
 
 smoke: ## Check a RUNNING app answers on every endpoint
 	@echo "==> Smoke testing $(APP_URL)"
-	@for path in \
+	@series=$$(curl -sf --max-time 5 "$(APP_URL)/api/series" \
+		| python3 -c 'import json,sys; print(json.load(sys.stdin)[0]["series_id"])') \
+		|| { echo "    FAIL  /api/series returned no series"; exit 1; }; \
+	ranked=$$(curl -sf --max-time 5 "$(APP_URL)/api/ranked/options" \
+		| python3 -c 'import json,sys,urllib.parse as u; o=json.load(sys.stdin); \
+		print(u.urlencode({k: o[0][k] for k in ("type","release","measure","metric","location","sex","age","year")}) if o else "")'); \
+	for path in \
 		"/api/health" \
 		"/api/meta" \
-		"/api/indicators" \
-		"/api/trend?indicator=tobacco_sev" \
-		"/api/ranked?type=causes" \
-		"/api/export.csv?indicator=le" ; do \
-		code=$$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "$(APP_URL)$$path"); \
+		"/api/dimensions" \
+		"/api/series" \
+		"/api/estimates?limit=5" \
+		"/api/ranked/options" \
+		"/api/trend?series=$$series" \
+		"/api/export.csv?series=$$series" \
+		"/api/figure.png?series=$$series" \
+		"/api/figure.pdf?series=$$series" \
+		$${ranked:+"/api/ranked?$$ranked"} \
+		"/" ; do \
+		code=$$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$(APP_URL)$$path"); \
 		if [ "$$code" = "200" ]; then echo "    ok   $$code  $$path"; \
 		else echo "    FAIL $$code  $$path"; fail=1; fi; \
 	done; \
-	code=$$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "$(APP_URL)/"); \
-	if [ "$$code" = "200" ]; then echo "    ok   $$code  /  (dashboard)"; \
-	else echo "    FAIL $$code  /  (dashboard)"; fail=1; fi; \
 	[ -z "$$fail" ] || exit 1
 
 check: lint test ## Run lint and tests -- what CI runs
 
 ## ----------------------------------------------------------- publish ----
 
-site: setup-dev $(DB) ## Build the static snapshot published to GitHub Pages
+site: setup-dev seed ## Build the static snapshot published to GitHub Pages
 	@$(PY) -m scripts.build_static_site --out $(SITE_DIR)
 	@echo "==> Preview it with: make site-serve"
 
@@ -258,7 +266,7 @@ refresh: setup ## Ingest the newest GBD export from data/incoming/
 	@./scripts/refresh.sh
 
 clean: ## Remove the database, logs, and caches (keeps .venv)
-	@rm -rf $(RUN_DIR) $(DB) $(SITE_DIR) .pytest_cache .ruff_cache
+	@rm -rf $(RUN_DIR) $(DB) $(DB).previous $(SITE_DIR) .pytest_cache .ruff_cache
 	@find . -name __pycache__ -type d -prune -exec rm -rf {} + 2>/dev/null || true
 	@echo "==> Cleaned. Rebuild the database with: make seed"
 

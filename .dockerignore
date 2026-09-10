@@ -12,5 +12,20 @@ __pycache__/
 tests/
 brand/
 data/gbd.db
+data/*.db*
+data/*.previous
+data/.*.building-*
+site/
 data/incoming/*
 !data/incoming/.gitkeep
+
+# Secrets never enter an image. Pass configuration at run time instead.
+.env
+.env.*
+secrets/
+.secrets/
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json

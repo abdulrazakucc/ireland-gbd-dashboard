@@ -374,6 +374,36 @@
     text-transform: uppercase; color: var(--text-muted);
   }
   .toolbar .spacer { margin-left: auto; }
+  .field > .field-label {
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.11em;
+    text-transform: uppercase; color: var(--text-muted);
+  }
+  .toolbar .dataset { flex: 1 1 420px; }
+  .dataset-line {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px;
+    min-height: 38px; font-size: 13px; color: var(--text-secondary);
+  }
+  .dataset-line strong { color: var(--text-primary); font-weight: 650; }
+  .dataset-line code { font-size: 11.5px; color: var(--text-muted); }
+  .flag {
+    font-size: 11px; font-weight: 650; white-space: nowrap;
+    color: var(--danger); padding: 2px 9px; border-radius: 999px;
+    background: color-mix(in srgb, var(--danger) 9%, transparent);
+    border: 1px solid color-mix(in srgb, var(--danger) 32%, transparent);
+  }
+
+  /* Filter panel inside a card: every dimension the card's chart depends on. */
+  .filters {
+    display: grid; gap: 10px 12px; margin: 0 0 16px;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    padding: 12px 14px; border-radius: 11px;
+    background: var(--surface-2); border: 1px solid var(--border);
+  }
+  .filters .field { gap: 4px; }
+  .filters .field > label { font-size: 9.5px; }
+  .filters select { min-width: 0; width: 100%; font-size: 13px; padding: 7px 9px; }
+  .filters select:disabled { opacity: 0.75; cursor: default; }
+  .filters .wide { grid-column: span 2; }
 
   select, .btn {
     font: inherit; font-size: 13.5px;
@@ -484,6 +514,7 @@
   .legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px; font-size: 12.5px; color: var(--text-secondary); }
   .legend .key { display: inline-flex; align-items: center; gap: 7px; }
   .legend .key i { width: 14px; height: 3px; border-radius: 2px; background: var(--accent); display: inline-block; }
+  .legend .key.band i { height: 11px; border-radius: 3px; opacity: 0.25; }
   .source-note { font-size: 11.5px; color: var(--text-muted); margin-top: 12px; }
 
   /* Table view -- the relief channel for the sub-3:1 light-mode hues, and
@@ -550,6 +581,7 @@
   }
   .foot-grid a { color: var(--series-1); text-decoration: none; }
   .foot-grid a:hover { text-decoration: underline; }
+  .foot-cite { margin: 8px 0 0; font-size: 11.5px; color: var(--text-muted); }
   .foot-note {
     margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--grid);
     font-size: 11.5px; color: var(--text-muted);
@@ -575,6 +607,8 @@
     .map-panel svg { width: 38px; height: 38px; }
     select { min-width: 0; width: 100%; }
     .field { width: 100%; }
+    .filters { grid-template-columns: 1fr 1fr; }
+    .filters .wide { grid-column: span 2; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -643,7 +677,7 @@
 
     <div class="masthead-hero">
       <div class="hero-figure">
-        <div class="hero-label">Life expectancy at birth, Ireland</div>
+        <div class="hero-label" id="heroLabel">Life expectancy at birth, Ireland</div>
         <div class="hero-value" id="heroValue">&mdash;<span class="hero-unit">years</span></div>
         <div class="hero-delta" id="heroDelta">Loading live data&hellip;</div>
       </div>
@@ -659,18 +693,11 @@
 
   <div class="status-line" id="statusLine" hidden></div>
 
-  <!-- One filter row above everything it scopes -->
+  <!-- Which dataset is being served, and the page-wide appearance switch -->
   <div class="toolbar">
-    <div class="field">
-      <label for="indicatorSelect">Trend indicator</label>
-      <select id="indicatorSelect"><option>Loading&hellip;</option></select>
-    </div>
-    <div class="field">
-      <label id="rankingLabel">Ranking</label>
-      <div class="segmented" role="group" aria-labelledby="rankingLabel">
-        <button class="btn" id="btnCauses" aria-pressed="true">Top causes</button>
-        <button class="btn" id="btnRisks" aria-pressed="false">Top risks</button>
-      </div>
+    <div class="field dataset">
+      <span class="field-label" id="datasetLabel">Dataset</span>
+      <div class="dataset-line" id="datasetLine" aria-labelledby="datasetLabel">Loading&hellip;</div>
     </div>
     <div class="field spacer">
       <label for="themeToggle">Appearance</label>
@@ -685,16 +712,19 @@
   <section class="card" id="trendCard" style="--accent: var(--series-1);">
     <div class="card-head">
       <div>
-        <h2><span class="accent-bar"></span><span id="trendTitle">Indicator trend</span></h2>
-        <p class="desc">Hover the chart for exact values.</p>
+        <h2><span class="accent-bar"></span><span id="trendTitle">Trend</span></h2>
+        <p class="desc" id="trendDesc">Loading&hellip;</p>
       </div>
       <div class="card-actions">
         <button class="btn" id="trendTableToggle" aria-pressed="false">Table view</button>
-        <a class="btn" id="downloadCsv" href="#" download>&#8595;&nbsp; CSV</a>
+        <a class="btn" id="downloadCsv" href="#" download title="Every dimension, value and uncertainty interval">&#8595;&nbsp; CSV</a>
+        <a class="btn" id="downloadPng" href="#" download title="Figure with GBD source and citation">&#8595;&nbsp; PNG</a>
+        <a class="btn" id="downloadPdf" href="#" download title="Vector figure with GBD source and citation">&#8595;&nbsp; PDF</a>
       </div>
     </div>
+    <div class="filters" id="trendFilters" role="group" aria-label="Trend filters"></div>
     <div class="chart-wrap" id="trendChartWrap">
-      <canvas id="trendChart" role="img" aria-label="Line chart of the selected indicator for Ireland"></canvas>
+      <canvas id="trendChart" role="img" aria-label="Line chart of the selected series, with its uncertainty interval"></canvas>
     </div>
     <div class="legend" id="trendLegend"></div>
     <div class="table-wrap" id="trendTableWrap" hidden></div>
@@ -705,17 +735,27 @@
   <section class="card" id="rankCard" style="--accent: var(--series-1);">
     <div class="card-head">
       <div>
-        <h2><span class="accent-bar"></span><span id="rankTitle">Leading causes, 2023</span></h2>
-        <p class="desc" id="rankDesc">Ranked by age-standardized DALY rate.</p>
+        <h2><span class="accent-bar"></span><span id="rankTitle">Leading causes</span></h2>
+        <p class="desc" id="rankDesc">Loading&hellip;</p>
       </div>
       <div class="card-actions">
+        <div class="segmented" role="group" aria-label="Rank causes or risk factors">
+          <button class="btn" id="btnCauses" aria-pressed="true">Top causes</button>
+          <button class="btn" id="btnRisks" aria-pressed="false">Top risks</button>
+        </div>
         <button class="btn" id="rankTableToggle" aria-pressed="false">Table view</button>
       </div>
     </div>
+    <div class="filters" id="rankFilters" role="group" aria-label="Ranking filters"></div>
     <div class="chart-wrap tall" id="rankChartWrap">
-      <canvas id="rankChart" role="img" aria-label="Horizontal bar chart of top causes or risks in Ireland, 2023"></canvas>
+      <canvas id="rankChart" role="img" aria-label="Horizontal bar chart of the leading causes or risk factors"></canvas>
     </div>
     <div class="table-wrap" id="rankTableWrap" hidden></div>
+    <p class="source-note" id="rankCaveat" hidden>
+      Every cause in the loaded dataset is ranked together. GBD causes are hierarchical, so if an
+      export mixes levels, a parent (e.g. &ldquo;Mental disorders&rdquo;) appears alongside its own
+      sub-causes (e.g. &ldquo;Anxiety disorders&rdquo;). Download a single cause level to compare like with like.
+    </p>
     <p class="source-note" id="rankSource"></p>
   </section>
 
@@ -754,12 +794,13 @@
         <a href="https://vizhub.healthdata.org/gbd-results/" target="_blank" rel="noopener">Global Burden of Disease Results Tool</a>.
         Used under IHME's
         <a href="https://www.healthdata.org/gbd/about/data-terms" target="_blank" rel="noopener">Free-to-Use Data Terms</a>.
+        <p class="foot-cite" id="footCitation"></p>
       </div>
       <div>
         <h3>Pipeline</h3>
-        FastAPI + SQLite backend, scheduled ETL re-ingestion.
-        GBD is published in annual rounds; the dashboard-to-API link is live,
-        the API-to-GBD link is a scheduled refresh.
+        FastAPI + SQLite backend. Each GBD release is imported by validating
+        the files, building a new database, verifying it, and only then
+        activating it &mdash; a failed refresh never replaces working data.
       </div>
     </div>
     <div class="foot-note">
@@ -784,24 +825,44 @@
    * "static" -- a published snapshot (GitHub Pages), where no process exists
                  to answer /api/.... scripts/build_static_site.py has written
                  every answer to a file, and apiUrl() below maps each API
-                 path onto the file holding it. Paths stay relative, so the
-                 snapshot works at any URL prefix.
+                 path onto the file holding it. A snapshot holds whole series
+                 only, so the year-range filter is not offered there.
 
    Everything after this block calls fetchJSON("/api/...") exactly as it
-   always did; only apiUrl() knows which shape is in play.                 */
+   would against the live API; only apiUrl() knows which shape is in play. */
 const STATIC = window.API_MODE === "static";
 const API_BASE = window.API_BASE
   || (location.protocol.startsWith("http") ? "" : "http://127.0.0.1:8000");
 
+// The dimensions that name one ranking file in a snapshot.
+const RANK_KEYS = ["type", "release", "measure", "metric", "location", "sex", "age", "year"];
+// Snapshot only: /api/ranked/options, whose entries each name their file.
+let rankedFiles = [];
+
+// "?a=1&b=2" from an object. null/undefined are left out; "" is kept, because
+// for cause and risk an empty value means "rows where it does not apply".
+function qs(params) {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null) query.append(k, v); });
+  const text = query.toString();
+  return text ? "?" + text : "";
+}
+
 // Map a live API path onto the snapshot file that holds its response.
 function apiUrl(path) {
   if (!STATIC) return API_BASE + path;
-  const [route, qs] = path.split("?");
-  const q = new URLSearchParams(qs || "");
-  if (route === "/api/trend")      return "api/trend/"  + encodeURIComponent(q.get("indicator")) + ".json";
-  if (route === "/api/ranked")     return "api/ranked/" + encodeURIComponent(q.get("type")) + ".json";
-  if (route === "/api/export.csv") return "api/export/" + encodeURIComponent(q.get("indicator")) + ".csv";
-  return route.replace(/^\/api\//, "api/") + ".json";   // /api/meta, /api/indicators, /api/health
+  const [route, query] = path.split("?");
+  const q = new URLSearchParams(query || "");
+  const series = encodeURIComponent(q.get("series"));
+  if (route === "/api/trend")      return "api/trend/" + series + ".json";
+  if (route === "/api/export.csv") return "api/export/" + series + ".csv";
+  if (route === "/api/figure.png") return "api/figure/" + series + ".png";
+  if (route === "/api/figure.pdf") return "api/figure/" + series + ".pdf";
+  if (route === "/api/ranked") {
+    const hit = rankedFiles.find((o) => RANK_KEYS.every((k) => String(o[k]) === q.get(k)));
+    return hit ? "api/" + hit.file : "api/ranked/not-in-snapshot.json";
+  }
+  return route.replace(/^\/api\//, "api/") + ".json";   // meta, series, dimensions, health, ranked/options
 }
 
 // The origin the API reference list documents. A snapshot has no API of its
@@ -875,15 +936,122 @@ const fmt = (v) => {
   if (abs >= 100)  return v.toLocaleString(undefined, { maximumFractionDigits: 1 });
   return v.toLocaleString(undefined, { maximumFractionDigits: 2 });
 };
-// Axis titles read better than the raw unit strings from the database.
-const unitShort = (u) => (u || "").replace("DALYs per 100000", "DALYs per 100,000")
-                                  .replace("percent of all-cause DALYs", "% of all-cause DALYs")
-                                  .replace(/^percent$/, "%");
+// Values arrive exactly as stored (IHME exports Percent as a proportion); the
+// API says how to scale each series for display, so that rule lives in one place.
+const scaled = (v, scale) => (v === null || v === undefined ? null : v * scale);
+const fmtDate = (iso) => {
+  const d = new Date(iso);
+  return isNaN(d) ? String(iso || "") : d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+};
+const slug = (text) => String(text).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "gbd";
+// Dimension values come from imported files, so escape them before they touch innerHTML.
+const esc = (text) => String(text ?? "").replace(/[&<>"']/g,
+  (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+// Every dimension of a series that is not already its title.
+const describe = (d) => [
+  d.measure !== d.title ? d.measure : null,
+  d.unit !== d.metric ? d.metric + " (" + d.unit + ")" : d.metric,
+  d.age, d.sex, d.location,
+].filter(Boolean).join(" · ");
+
+/* ---- dimensions and filters -------------------------------------------- */
+
+const NONE = "";   // a cause or risk that does not apply to the series
+const DIM_LABEL = {
+  release: "Release", measure: "Measure", cause: "Cause", risk: "Risk", metric: "Metric",
+  age: "Age", sex: "Sex", location: "Location", year: "Year", from: "From", to: "To",
+};
+// Defaults a new selection falls back to, in order of preference.
+const PREFER = {
+  sex: ["Both"],
+  age: ["Age-standardized", "All ages", "At birth", "<1 year"],
+  cause: [NONE, "All causes"],
+  risk: [NONE],
+  location: ["Ireland"],
+};
+
+function ageRank(age) {
+  if (/standardi[sz]ed/i.test(age)) return -3;
+  if (/^all ages$/i.test(age)) return -2;
+  if (/birth/i.test(age)) return -1;
+  const m = age.match(/\d+(\.\d+)?/);
+  return m ? parseFloat(m[0]) - (age.trim().startsWith("<") ? 0.5 : 0) : 999;
+}
+
+function sortValues(dim, values) {
+  const copy = [...values];
+  if (dim === "year") return copy.sort((a, b) => b - a);   // latest first
+  if (dim === "age") return copy.sort((a, b) => ageRank(a) - ageRank(b) || a.localeCompare(b));
+  if (dim === "sex") {
+    const order = (v) => { const i = ["Both", "Female", "Male"].indexOf(v); return i < 0 ? 9 : i; };
+    return copy.sort((a, b) => order(a) - order(b) || a.localeCompare(b));
+  }
+  return copy.sort((a, b) => (b === NONE) - (a === NONE) || String(a).localeCompare(String(b)));
+}
+
+function pick(dim, values, current) {
+  if (values.includes(current)) return current;
+  for (const preferred of PREFER[dim] || []) if (values.includes(preferred)) return preferred;
+  return values[0];
+}
+
+// Walk the dimensions in order, narrowing the pool of catalogue entries at each
+// step. A select only ever offers values that still lead to real data, so any
+// combination a reader can choose exists -- no dead ends, no empty charts.
+function cascade(pool, dims, current) {
+  const selection = {}, options = {};
+  for (const dim of dims) {
+    const values = sortValues(dim, [...new Set(pool.map((entry) => entry[dim] ?? NONE))]);
+    options[dim] = values;
+    selection[dim] = pick(dim, values, current[dim]);
+    pool = pool.filter((entry) => (entry[dim] ?? NONE) === selection[dim]);
+  }
+  return { selection, options, pool };
+}
+
+const optionText = (dim, value) =>
+  value === NONE && (dim === "cause" || dim === "risk") ? "Not applicable" : String(value);
+
+// One labelled select per dimension. Release and location are left out while
+// the dataset has a single value for them; every other dimension stays
+// visible (disabled when there is no choice) so the full selection is always
+// on screen -- a chart is meaningless without its age, sex and metric.
+function renderFilters(containerId, fields, onChange) {
+  const box = $(containerId);
+  const focused = document.activeElement && document.activeElement.id;
+  box.innerHTML = "";
+  fields.forEach(({ dim, values, value, wide }) => {
+    if ((dim === "release" || dim === "location") && values.length <= 1) return;
+    const id = containerId + "-" + dim;
+    const field = document.createElement("div");
+    field.className = "field" + (wide ? " wide" : "");
+    const label = document.createElement("label");
+    label.htmlFor = id;
+    label.textContent = DIM_LABEL[dim];
+    const select = document.createElement("select");
+    select.id = id;
+    values.forEach((v) => select.add(new Option(optionText(dim, v), v)));
+    select.value = String(value);
+    select.disabled = values.length <= 1;
+    select.addEventListener("change", () => onChange(dim, select.value));
+    field.append(label, select);
+    box.append(field);
+  });
+  // Re-rendering replaces the elements; keep keyboard focus where it was.
+  if (focused && focused.startsWith(containerId + "-") && $(focused)) $(focused).focus();
+}
 
 /* ---- chart plumbing ---------------------------------------------------- */
 
 let trendChart, rankChart;
-let state = { indicator: null, rankType: "causes", trend: null, ranked: null };
+const state = {
+  meta: null,
+  catalogue: [],          // /api/series: every series and the years it covers
+  rankOptions: [],        // /api/ranked/options: every rankable combination
+  trendSel: {}, trendRange: {}, trendParams: {}, trend: null,
+  rankType: "causes", rankSel: {}, ranked: null,
+  tiles: null,
+};
 
 // Chart.js defaults that match the design tokens.
 function baseFont() {
@@ -1010,75 +1178,135 @@ function sparkline(values, color) {
     + "</svg>";
 }
 
-/* ---- stat tiles -------------------------------------------------------- */
+/* ---- stat tiles and hero ----------------------------------------------- */
 
+// Curated headline picks, matched by name rather than by id so they survive a
+// new export. A tile whose series is not in the loaded dataset is left out.
 // slot: which validated categorical slot the tile's accent uses.
 // goodDown: true where a falling line is the good direction.
 const TILE_SPEC = [
-  { id: "hale",        label: "Healthy life expectancy", slot: 1, goodDown: false },
-  { id: "tobacco_sev", label: "Tobacco exposure",        slot: 2, goodDown: true  },
-  { id: "bmi_sev",     label: "High BMI exposure",       slot: 3, goodDown: true  },
-  { id: "airpol_sev",  label: "Air pollution exposure",  slot: 4, goodDown: true  },
+  { label: "Healthy life expectancy", slot: 1, goodDown: false, measure: /^HALE\b/i },
+  { label: "Tobacco exposure",  slot: 2, goodDown: true, measure: /summary exposure value/i, risk: /^tobacco$/i },
+  { label: "High BMI exposure", slot: 3, goodDown: true, measure: /summary exposure value/i, risk: /high body-mass index/i },
+  { label: "Air pollution exposure", slot: 4, goodDown: true, measure: /summary exposure value/i, risk: /^air pollution$/i },
 ];
+const HERO_SPEC = { measure: /^life expectancy$/i };
+
+// The best catalogue match for a spec: preferred sex, age and location, then
+// the series with the most years.
+function findSeries(spec) {
+  const matches = state.catalogue.filter((s) =>
+    ["measure", "cause", "risk"].every((d) => !spec[d] || spec[d].test(s[d] || "")));
+  const score = (s) => ["sex", "age", "location"].reduce((sum, d) => {
+    const i = (PREFER[d] || []).indexOf(s[d]);
+    return sum + (i < 0 ? 9 : i);
+  }, 0);
+  return matches.sort((a, b) => score(a) - score(b) || b.years.length - a.years.length)[0] || null;
+}
 
 async function renderTiles() {
-  const results = await Promise.all(TILE_SPEC.map(async (spec) => {
-    try { return { spec, data: await fetchJSON("/api/trend?indicator=" + encodeURIComponent(spec.id)) }; }
+  state.tiles = await Promise.all(TILE_SPEC.map(async (spec) => {
+    const entry = findSeries(spec);
+    if (!entry) return { spec, data: null };
+    try { return { spec, data: await fetchJSON("/api/trend" + qs({ series: entry.series_id })) }; }
     catch (e) { return { spec, data: null }; }
   }));
+  drawTiles();
+}
 
-  $("tiles").innerHTML = results.map(({ spec, data }) => {
+function drawTiles() {
+  $("tiles").innerHTML = state.tiles.map(({ spec, data }) => {
     if (!data || !data.series.length) return "";
     const color = css("--series-" + spec.slot);
-    const series = data.series;
-    const first = series[0], last = series[series.length - 1];
-    const change = last.value - first.value;
+    const values = data.series.map((p) => p.value * data.display_scale);
+    const first = values[0], last = values[values.length - 1];
+    const change = last - first;
     const falling = change < 0;
     // Direction is good when it moves the way this indicator should move.
     const isGood = spec.goodDown ? falling : !falling;
     const arrow = falling ? "↓" : "↑";
-    const pct = first.value ? Math.abs(change / first.value) * 100 : 0;
-
+    const pct = first ? Math.abs(change / first) * 100 : 0;
     return ''
-      + '<article class="tile" style="--accent: ' + color + ';">'
-      +   '<div class="tile-label"><span class="tile-swatch"></span>' + data.label.replace(/\s*\(SEV\)/, "") + '</div>'
-      +   '<div class="tile-value">' + fmt(last.value)
-      +     '<span class="tile-unit">' + unitShort(data.unit) + '</span></div>'
+      + '<article class="tile" style="--accent: ' + color + ';" title="' + esc(describe(data)) + '">'
+      +   '<div class="tile-label"><span class="tile-swatch"></span>' + esc(spec.label) + '</div>'
+      +   '<div class="tile-value">' + fmt(last)
+      +     '<span class="tile-unit">' + esc(data.unit) + '</span></div>'
       +   '<div class="tile-foot">'
       +     '<div class="tile-delta">'
       +       '<span class="' + (isGood ? "good" : "") + '">' + arrow + " " + fmt(Math.abs(change))
       +       (pct ? " (" + pct.toFixed(0) + "%)" : "") + '</span>'
-      +       '<br>since ' + first.year
+      +       '<br>since ' + data.series[0].year
       +     '</div>'
-      +     sparkline(series.map((d) => d.value), color)
+      +     sparkline(values, color)
       +   '</div>'
       + '</article>';
   }).join("");
 }
 
-/* ---- hero figure ------------------------------------------------------- */
-
 async function renderHero() {
+  const entry = findSeries(HERO_SPEC);
   try {
-    const le = await fetchJSON("/api/trend?indicator=le");
+    if (!entry) throw new Error("no life expectancy series");
+    const le = await fetchJSON("/api/trend" + qs({ series: entry.series_id }));
     const first = le.series[0], last = le.series[le.series.length - 1];
     const gain = last.value - first.value;
+    $("heroLabel").textContent = "Life expectancy"
+      + (/birth|<1 year/i.test(le.age) ? " at birth" : " (" + le.age + ")") + ", " + le.location;
     $("heroValue").innerHTML = fmt(last.value) + '<span class="hero-unit">years (' + last.year + ')</span>';
-    $("heroDelta").innerHTML = "<strong>+" + fmt(gain) + " years</strong> since " + first.year
-      + " &middot; healthy life expectancy tracked alongside";
+    $("heroDelta").innerHTML = "<strong>" + (gain < 0 ? "−" : "+") + fmt(Math.abs(gain)) + " years</strong> since "
+      + first.year
+      + (last.lower !== null ? " &middot; 95% UI " + fmt(last.lower) + "–" + fmt(last.upper)
+                             : " &middot; healthy life expectancy tracked alongside");
   } catch (e) {
     $("heroValue").innerHTML = "&mdash;";
-    $("heroDelta").textContent = "Life expectancy unavailable";
+    $("heroDelta").textContent = "Life expectancy is not in the loaded dataset";
   }
 }
 
 /* ---- trend chart ------------------------------------------------------- */
 
-async function renderTrend(indicatorId) {
-  state.indicator = indicatorId;
-  const data = await fetchJSON("/api/trend?indicator=" + encodeURIComponent(indicatorId));
-  state.trend = data;
-  drawTrend();
+const TREND_DIMS = ["release", "measure", "cause", "risk", "metric", "age", "sex", "location"];
+const WIDE = new Set(["measure", "cause", "risk"]);
+
+// Resolve the selection to one series, fit the year range to it, and redraw
+// the filter panel. Returns the catalogue entry for the series.
+function updateTrendFilters(changed) {
+  const { selection, options, pool } = cascade(state.catalogue, TREND_DIMS, state.trendSel);
+  state.trendSel = selection;
+  const entry = pool[0];
+  const years = entry.years;
+  // Every series opens on all of its years. Only a range the reader chose is
+  // carried over, and only while the new series still covers it -- otherwise a
+  // range left over from the previous series would silently narrow downloads.
+  let { from, to, custom } = state.trendRange;
+  if (!custom || !years.includes(from)) from = years[0];
+  if (!custom || !years.includes(to)) to = years[years.length - 1];
+  if (from > to) { if (changed === "to") from = to; else to = from; }
+  const whole = from === years[0] && to === years[years.length - 1];
+  state.trendRange = { from, to, custom: Boolean(custom) && !whole };
+
+  const fields = TREND_DIMS.map((dim) => ({ dim, values: options[dim], value: selection[dim], wide: WIDE.has(dim) }));
+  if (!STATIC) fields.push({ dim: "from", values: years, value: from }, { dim: "to", values: years, value: to });
+  renderFilters("trendFilters", fields, (dim, value) => {
+    if (dim === "from" || dim === "to") Object.assign(state.trendRange, { [dim]: Number(value), custom: true });
+    else state.trendSel[dim] = value;
+    loadTrend(dim);
+  });
+  return entry;
+}
+
+async function loadTrend(changed) {
+  const entry = updateTrendFilters(changed);
+  const { from, to } = state.trendRange;
+  const whole = from === entry.years[0] && to === entry.years[entry.years.length - 1];
+  const params = { series: entry.series_id, ...(STATIC || whole ? {} : { year_from: from, year_to: to }) };
+  try {
+    state.trend = await fetchJSON("/api/trend" + qs(params));
+    state.trendParams = params;
+    drawTrend();
+  } catch (e) {
+    showStatus("Could not load that series: " + e.message, false);
+  }
 }
 
 function drawTrend() {
@@ -1086,57 +1314,83 @@ function drawTrend() {
   if (!data) return;
   const color = css("--series-1");
   const surface = css("--surface-1");
+  const k = data.display_scale;
+  const years = data.series.map((p) => p.year);
+  const values = data.series.map((p) => p.value * k);
+  const lower = data.series.map((p) => scaled(p.lower, k));
+  const upper = data.series.map((p) => scaled(p.upper, k));
+  const band = data.has_uncertainty;
+  const span = years[0] === years[years.length - 1] ? years[0] : years[0] + "–" + years[years.length - 1];
 
-  $("trendTitle").textContent = data.label;
+  $("trendTitle").textContent = data.title;
+  $("trendDesc").textContent = describe(data) + " · " + span;
   $("trendLegend").innerHTML =
-    '<span class="key" style="--accent:' + color + '"><i></i>' + data.label
-    + " &middot; " + data.location + " &middot; " + data.sex + "</span>";
-  $("trendSource").textContent =
-    "Unit: " + unitShort(data.unit) + ". " + servedFrom("/api/trend");
-  $("downloadCsv").href = apiUrl("/api/export.csv?indicator=" + encodeURIComponent(data.indicator));
-  $("downloadCsv").setAttribute("download", data.indicator + ".csv");
+    '<span class="key" style="--accent:' + color + '"><i></i>Estimate</span>'
+    + (band ? '<span class="key band" style="--accent:' + color + '"><i></i>95% uncertainty interval</span>'
+            : '<span class="key">No uncertainty interval in the source data</span>');
+  $("trendSource").textContent = "Unit: " + data.unit + ". " + data.release + ". " + servedFrom("/api/trend");
 
-  // Table twin -- every value readable without relying on the chart.
+  // Every download carries the same selection, year range included.
+  const stem = slug(data.title) + "_" + slug(data.release);
+  [["downloadCsv", "/api/export.csv", "csv"], ["downloadPng", "/api/figure.png", "png"],
+   ["downloadPdf", "/api/figure.pdf", "pdf"]].forEach(([id, route, ext]) => {
+    $(id).href = apiUrl(route + qs(state.trendParams));
+    $(id).setAttribute("download", stem + "." + ext);
+  });
+
+  // Table twin -- every value and interval readable without relying on the chart.
   $("trendTableWrap").innerHTML =
-    '<table><caption>' + data.label + " &mdash; " + data.location
-    + " (" + unitShort(data.unit) + ")</caption>"
-    + "<thead><tr><th>Year</th><th class='num'>Value</th></tr></thead><tbody>"
-    + data.series.map((d) => "<tr><td>" + d.year + "</td><td class='num'>" + fmt(d.value) + "</td></tr>").join("")
+    "<table><caption>" + esc(data.title) + " &mdash; " + esc(describe(data)) + "</caption>"
+    + "<thead><tr><th>Year</th><th class='num'>Value</th>"
+    + (band ? "<th class='num'>Lower</th><th class='num'>Upper</th>" : "") + "</tr></thead><tbody>"
+    + years.map((y, i) => "<tr><td>" + y + "</td><td class='num'>" + fmt(values[i]) + "</td>"
+        + (band ? "<td class='num'>" + (lower[i] === null ? "&ndash;" : fmt(lower[i])) + "</td><td class='num'>"
+                + (upper[i] === null ? "&ndash;" : fmt(upper[i])) + "</td>" : "") + "</tr>").join("")
     + "</tbody></table>";
+
+  const datasets = [{
+    label: data.title,
+    data: values,
+    borderColor: color,
+    backgroundColor: color + "1a",    // ~10% wash, only when there is no band
+    borderWidth: 2,
+    fill: !band,
+    tension: 0.28,
+    pointRadius: 4,                   // 8px marker
+    pointHoverRadius: 6,
+    pointBackgroundColor: color,
+    pointBorderColor: surface,        // 2px surface ring
+    pointBorderWidth: 2,
+    pointHitRadius: 24,               // generous hit target
+  }];
+  if (band) {
+    // Upper bound filled down to the lower bound ("+1"); gaps stay gaps.
+    const bound = { borderWidth: 0, pointRadius: 0, pointHitRadius: 0, tension: 0.28, spanGaps: false };
+    datasets.push({ ...bound, label: "Upper", data: upper, fill: "+1", backgroundColor: color + "33" },
+                  { ...bound, label: "Lower", data: lower, fill: false });
+  }
 
   if (trendChart) trendChart.destroy();
   baseFont();
   trendChart = new Chart($("trendChart"), {
     type: "line",
-    data: {
-      labels: data.series.map((d) => d.year),
-      datasets: [{
-        label: data.label,
-        data: data.series.map((d) => d.value),
-        borderColor: color,
-        backgroundColor: color + "1a",   // ~10% wash
-        borderWidth: 2,
-        fill: true,
-        tension: 0.28,
-        pointRadius: 4,                   // 8px marker
-        pointHoverRadius: 6,
-        pointBackgroundColor: color,
-        pointBorderColor: surface,        // 2px surface ring
-        pointBorderWidth: 2,
-        pointHitRadius: 24,               // generous hit target
-      }],
-    },
+    data: { labels: years, datasets },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       layout: { padding: { right: 46, top: 8 } },
       interaction: { mode: "index", intersect: false },
       plugins: {
-        legend: { display: false },       // single series -- the title names it
+        legend: { display: false },       // the HTML legend names estimate and band
         tooltip: Object.assign(tooltipStyle(), {
+          filter: (item) => item.datasetIndex === 0,
           callbacks: {
             title: (items) => "Year " + items[0].label,
-            label: (ctx) => " " + fmt(ctx.parsed.y) + " " + unitShort(data.unit),
+            label: (ctx) => {
+              const i = ctx.dataIndex;
+              return " " + fmt(values[i]) + " " + data.unit
+                + (lower[i] !== null ? "  (95% UI " + fmt(lower[i]) + "–" + fmt(upper[i]) + ")" : "");
+            },
           },
         }),
       },
@@ -1149,14 +1403,8 @@ function drawTrend() {
         y: {
           grid: { color: css("--grid"), drawTicks: false },
           border: { display: false },
-          ticks: {
-            color: css("--text-muted"), padding: 10,
-            callback: (v) => fmt(v),
-          },
-          title: {
-            display: true, text: unitShort(data.unit),
-            color: css("--text-muted"), font: { size: 11.5 },
-          },
+          ticks: { color: css("--text-muted"), padding: 10, callback: (v) => fmt(v) },
+          title: { display: true, text: data.unit, color: css("--text-muted"), font: { size: 11.5 } },
         },
       },
     },
@@ -1166,36 +1414,68 @@ function drawTrend() {
 
 /* ---- ranked chart ------------------------------------------------------ */
 
-async function renderRank(type) {
+const RANK_DIMS = ["release", "measure", "metric", "age", "sex", "location", "year"];
+
+function setRankType(type) {
   state.rankType = type;
-  const data = await fetchJSON("/api/ranked?type=" + type);
-  state.ranked = data;
-  drawRank();
+  $("btnCauses").setAttribute("aria-pressed", String(type === "causes"));
+  $("btnRisks").setAttribute("aria-pressed", String(type === "risks"));
+  loadRank();
+}
+
+async function loadRank() {
+  const pool = state.rankOptions.filter((o) => o.type === state.rankType);
+  if (!pool.length) {
+    state.ranked = null;
+    if (rankChart) { rankChart.destroy(); rankChart = null; }
+    $("rankFilters").innerHTML = "";
+    $("rankTableWrap").innerHTML = "";
+    $("rankCaveat").hidden = true;
+    $("rankTitle").textContent = state.rankType === "causes" ? "Leading causes" : "Leading risk factors";
+    $("rankDesc").textContent = "Nothing in the loaded dataset can be ranked this way.";
+    $("rankSource").textContent = "";
+    return;
+  }
+  const { selection, options, pool: match } = cascade(pool, RANK_DIMS, state.rankSel);
+  state.rankSel = selection;
+  renderFilters("rankFilters",
+    RANK_DIMS.map((dim) => ({ dim, values: options[dim], value: selection[dim], wide: dim === "measure" })),
+    (dim, value) => { state.rankSel[dim] = dim === "year" ? Number(value) : value; loadRank(); });
+  const option = match[0];
+  try {
+    state.ranked = await fetchJSON("/api/ranked" + qs(Object.fromEntries(RANK_KEYS.map((k) => [k, option[k]]))));
+    drawRank();
+  } catch (e) {
+    showStatus("Could not load that ranking: " + e.message, false);
+  }
 }
 
 function drawRank() {
   const data = state.ranked;
   if (!data) return;
   const causes = data.type === "causes";
-  // Two different measures shown one at a time -- each is a single series,
-  // so each gets one slot, not a colour per bar.
+  // Causes and risks are shown one at a time -- each is a single series, so
+  // each gets one slot, not a colour per bar.
   const color = causes ? css("--series-1") : css("--series-2");
+  const k = data.display_scale;
+  const items = data.items.map((it) => ({ label: it.label, v: it.value * k, lo: scaled(it.lower, k), hi: scaled(it.upper, k) }));
+  const ui = items.some((it) => it.lo !== null);
 
   $("rankCard").style.setProperty("--accent", color);
   $("rankTitle").textContent = (causes ? "Leading causes, " : "Leading risk factors, ") + data.year;
-  $("rankDesc").textContent = causes
-    ? "Ranked by age-standardized DALY rate."
-    : "Ranked by share of all-cause DALYs attributable to each risk.";
-  const unit = unitShort(data.items[0] ? data.items[0].unit : "");
-  $("rankSource").textContent = "Unit: " + unit + ". " + servedFrom("/api/ranked");
+  $("rankDesc").textContent = "Ranked by " + describe({ ...data, title: null });
+  $("rankCaveat").hidden = !causes;
+  $("rankSource").textContent = "Unit: " + data.unit + ". " + data.release + ". " + servedFrom("/api/ranked");
+  $("rankChartWrap").style.height = Math.max(260, items.length * 30 + 70) + "px";
 
   $("rankTableWrap").innerHTML =
-    "<table><caption>" + (causes ? "Leading causes" : "Leading risk factors")
-    + " &mdash; " + data.location + " " + data.year + " (" + unit + ")</caption>"
-    + "<thead><tr><th>#</th><th>" + (causes ? "Cause" : "Risk factor")
-    + "</th><th class='num'>Value</th></tr></thead><tbody>"
-    + data.items.map((it, i) => "<tr><td>" + (i + 1) + "</td><td>" + it.label
-        + "</td><td class='num'>" + fmt(it.value) + "</td></tr>").join("")
+    "<table><caption>" + (causes ? "Leading causes" : "Leading risk factors") + " &mdash; "
+    + esc(describe({ ...data, title: null })) + ", " + data.year + "</caption>"
+    + "<thead><tr><th>#</th><th>" + (causes ? "Cause" : "Risk factor") + "</th><th class='num'>Value</th>"
+    + (ui ? "<th class='num'>95% UI</th>" : "") + "</tr></thead><tbody>"
+    + items.map((it, i) => "<tr><td>" + (i + 1) + "</td><td>" + esc(it.label) + "</td><td class='num'>"
+        + fmt(it.v) + "</td>" + (ui ? "<td class='num'>" + (it.lo === null ? "&ndash;"
+        : fmt(it.lo) + "&ndash;" + fmt(it.hi)) + "</td>" : "") + "</tr>").join("")
     + "</tbody></table>";
 
   if (rankChart) rankChart.destroy();
@@ -1203,10 +1483,10 @@ function drawRank() {
   rankChart = new Chart($("rankChart"), {
     type: "bar",
     data: {
-      labels: data.items.map((i) => i.label),
+      labels: items.map((it) => it.label),
       datasets: [{
-        label: causes ? "DALY rate" : "Share of all-cause DALYs",
-        data: data.items.map((i) => i.value),
+        label: data.measure,
+        data: items.map((it) => it.v),
         backgroundColor: color,
         borderRadius: 4,          // rounded data-end
         borderSkipped: "start",   // square at the baseline
@@ -1221,7 +1501,13 @@ function drawRank() {
       plugins: {
         legend: { display: false },
         tooltip: Object.assign(tooltipStyle(), {
-          callbacks: { label: (ctx) => " " + fmt(ctx.parsed.x) + " " + unit },
+          callbacks: {
+            label: (ctx) => {
+              const it = items[ctx.dataIndex];
+              return " " + fmt(it.v) + " " + data.unit
+                + (it.lo !== null ? "  (95% UI " + fmt(it.lo) + "–" + fmt(it.hi) + ")" : "");
+            },
+          },
         }),
       },
       scales: {
@@ -1230,7 +1516,7 @@ function drawRank() {
           grid: { color: css("--grid"), drawTicks: false },
           border: { display: false },
           ticks: { color: css("--text-muted"), padding: 6, callback: (v) => fmt(v) },
-          title: { display: true, text: unit, color: css("--text-muted"), font: { size: 11.5 } },
+          title: { display: true, text: data.unit, color: css("--text-muted"), font: { size: 11.5 } },
         },
         y: {
           grid: { display: false },
@@ -1247,7 +1533,7 @@ function redrawCharts() {
   if (state.trend) drawTrend();
   if (state.ranked) drawRank();
   // Sparklines are inline SVG, so they carry their own colours -- redraw them.
-  if (state.tilesReady) renderTiles();
+  if (state.tiles) drawTiles();
 }
 
 /* ---- table toggles ----------------------------------------------------- */
@@ -1268,15 +1554,18 @@ wireTableToggle("rankTableToggle", "rankTableWrap", "rankChartWrap");
 
 function renderApiList() {
   const rows = [
-    ["/api/meta", "Round, source, provenance"],
-    ["/api/indicators", "Available trend indicators"],
-    ["/api/trend?indicator=tobacco_sev", "Time series for one indicator"],
-    ["/api/ranked?type=causes", "Ranked causes or risks"],
-    ["/api/export.csv?indicator=le", "CSV download for citation"],
-    ["/api/health", "Liveness check"],
+    ["/api/meta", "Release, import date, source files and checksums, citation"],
+    ["/api/dimensions", "Values available for every dimension"],
+    ["/api/series?measure=Deaths", "Catalogue of series, filterable by any dimension"],
+    ["/api/trend?series=…&year_from=2010", "One series with 95% uncertainty intervals"],
+    ["/api/estimates?measure=…&age=…&sex=…", "Filtered rows, paged"],
+    ["/api/ranked?type=causes&measure=…", "Leading causes or risks"],
+    ["/api/export.csv?series=…", "CSV: every dimension, value and interval"],
+    ["/api/figure.png?series=…", "PNG or PDF figure with GBD citation"],
+    ["/docs", "Interactive documentation of every parameter"],
   ];
   $("apiList").innerHTML = rows.map(([path, what]) =>
-    '<div class="api-row"><span class="verb">GET</span><code>' + API_SHOWN + path
+    '<div class="api-row"><span class="verb">GET</span><code>' + esc(API_SHOWN + path)
     + '</code><span class="what">' + what + "</span></div>").join("");
 
   // A snapshot has no API of its own. Say so, rather than printing addresses
@@ -1284,6 +1573,30 @@ function renderApiList() {
   if (STATIC) {
     $("apiNote").hidden = false;
   }
+}
+
+/* ---- provenance -------------------------------------------------------- */
+
+function renderProvenance(meta) {
+  $("chips").innerHTML =
+      '<span class="chip place"><svg class="map-icon" aria-hidden="true" focusable="false">'
+    + '<use href="#ie-map"/></svg>Republic of Ireland</span>'
+    + (STATIC
+        ? '<span class="chip"><span class="dot"></span>Snapshot ' + esc((meta.snapshot_built || "").slice(0, 10)) + "</span>"
+        : '<span class="chip"><span class="dot live"></span>Live API</span>')
+    + '<span class="chip"><span class="dot"></span>' + esc(meta.release) + "</span>"
+    + '<span class="chip"><span class="dot"></span>Updated ' + esc(fmtDate(meta.imported_at)) + "</span>"
+    + '<span class="chip"><span class="dot"></span>' + esc(meta.prototype ? "Prototype seed data" : meta.source) + "</span>";
+
+  $("datasetLine").innerHTML =
+      "<strong>" + esc(meta.release) + "</strong>"
+    + "<span>" + meta.row_count.toLocaleString() + " estimates &middot; "
+    + meta.series_count.toLocaleString() + " series &middot; " + meta.year_min + "&ndash;" + meta.year_max + "</span>"
+    + "<span>Updated " + esc(fmtDate(meta.imported_at)) + " &middot; " + esc(meta.source) + "</span>"
+    + meta.source_files.map((f) => '<code title="' + esc(f.filename + " · " + f.row_count + " rows · sha256 " + f.sha256)
+        + '">' + esc(f.filename) + " &middot; sha256 " + esc(f.sha256.slice(0, 12)) + "&hellip;</code>").join("")
+    + (meta.prototype ? '<span class="flag" title="' + esc(meta.notice) + '">Prototype data &mdash; not for citation</span>' : "");
+  $("footCitation").textContent = meta.citation;
 }
 
 /* ---- init -------------------------------------------------------------- */
@@ -1299,57 +1612,41 @@ async function init() {
     $("chipStatus").innerHTML = '<span class="dot down"></span>API unreachable';
     $("heroValue").innerHTML = "&mdash;";
     $("heroDelta").textContent = "No connection to the API";
+    $("datasetLine").textContent = "Unavailable";
     showStatus(STATIC
       ? "This published snapshot is incomplete: its data files could not be loaded."
       : "Could not reach the API at " + API_SHOWN
         + ". Start it with: make run (local) or make up (Docker).", false);
     return;
   }
+  state.meta = meta;
+  renderProvenance(meta);
 
-  $("chips").innerHTML =
-      '<span class="chip place"><svg class="map-icon" aria-hidden="true" focusable="false">'
-    + '<use href="#ie-map"/></svg>Republic of Ireland</span>'
-    + (STATIC
-        ? '<span class="chip"><span class="dot"></span>Static snapshot</span>'
-        : '<span class="chip"><span class="dot live"></span>Live API</span>')
-    + '<span class="chip"><span class="dot"></span>' + (meta.gbd_round || "GBD round unknown") + "</span>"
-    + '<span class="chip"><span class="dot"></span>source: ' + (meta.source || "unknown") + "</span>"
-    + (STATIC && meta.snapshot_built
-        ? '<span class="chip"><span class="dot"></span>built ' + meta.snapshot_built.slice(0, 10) + "</span>"
-        : "");
+  try {
+    [state.catalogue, state.rankOptions] = await Promise.all([
+      fetchJSON("/api/series"), fetchJSON("/api/ranked/options")]);
+  } catch (e) {
+    showStatus("Could not load the list of available series: " + e.message, false);
+    return;
+  }
+  if (STATIC) rankedFiles = state.rankOptions;
+  if (!state.catalogue.length) {
+    showStatus("The loaded dataset contains no estimates.", false);
+    return;
+  }
 
-  const indicators = await fetchJSON("/api/indicators");
-  const sel = $("indicatorSelect");
-  sel.innerHTML = "";
-  indicators.forEach((ind) => {
-    const opt = document.createElement("option");
-    opt.value = ind.indicator_id;
-    opt.textContent = ind.indicator_label;
-    sel.appendChild(opt);
-  });
-  sel.value = indicators.some((i) => i.indicator_id === "le") ? "le" : indicators[0].indicator_id;
-  sel.addEventListener("change", (e) => renderTrend(e.target.value));
+  // Open on life expectancy, as the dashboard always has, when it is present.
+  const opening = findSeries(HERO_SPEC) || state.catalogue[0];
+  state.trendSel = Object.fromEntries(TREND_DIMS.map((d) => [d, opening[d] ?? NONE]));
 
-  await Promise.all([
-    renderHero(),
-    renderTiles().then(() => { state.tilesReady = true; }),
-    renderTrend(sel.value),
-    renderRank("causes"),
-  ]);
+  await Promise.all([renderHero(), renderTiles(), loadTrend(), loadRank()]);
 }
 
-$("btnCauses").addEventListener("click", () => {
-  renderRank("causes");
-  $("btnCauses").setAttribute("aria-pressed", "true");
-  $("btnRisks").setAttribute("aria-pressed", "false");
-});
-$("btnRisks").addEventListener("click", () => {
-  renderRank("risks");
-  $("btnRisks").setAttribute("aria-pressed", "true");
-  $("btnCauses").setAttribute("aria-pressed", "false");
-});
+$("btnCauses").addEventListener("click", () => setRankType("causes"));
+$("btnRisks").addEventListener("click", () => setRankType("risks"));
 
 init();
 </script>
+
 </body>
 </html>

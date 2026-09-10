@@ -1,69 +1,88 @@
-indicator_id,indicator_label,location,sex,year,value,unit,gbd_round
-le,Life expectancy,Ireland,combined,2013,81.1,years,GBD 2023
-le,Life expectancy,Ireland,combined,2014,81.4,years,GBD 2023
-le,Life expectancy,Ireland,combined,2015,81.5,years,GBD 2023
-le,Life expectancy,Ireland,combined,2016,81.7,years,GBD 2023
-le,Life expectancy,Ireland,combined,2017,82.0,years,GBD 2023
-le,Life expectancy,Ireland,combined,2018,82.2,years,GBD 2023
-le,Life expectancy,Ireland,combined,2019,82.4,years,GBD 2023
-le,Life expectancy,Ireland,combined,2020,82.2,years,GBD 2023
-le,Life expectancy,Ireland,combined,2021,82.3,years,GBD 2023
-le,Life expectancy,Ireland,combined,2022,82.2,years,GBD 2023
-le,Life expectancy,Ireland,combined,2023,82.5,years,GBD 2023
-hale,Healthy life expectancy,Ireland,combined,2013,69.8,years,GBD 2023
-hale,Healthy life expectancy,Ireland,combined,2014,70.0,years,GBD 2023
-hale,Healthy life expectancy,Ireland,combined,2015,70.1,years,GBD 2023
-hale,Healthy life expectancy,Ireland,combined,2016,70.2,years,GBD 2023
-hale,Healthy life expectancy,Ireland,combined,2017,70.4,years,GBD 2023
-hale,Healthy life expectancy,Ireland,combined,2018,70.6,years,GBD 2023
-hale,Healthy life expectancy,Ireland,combined,2019,70.7,years,GBD 2023
-hale,Healthy life expectancy,Ireland,combined,2020,70.3,years,GBD 2023
-hale,Healthy life expectancy,Ireland,combined,2021,70.3,years,GBD 2023
-hale,Healthy life expectancy,Ireland,combined,2022,70.1,years,GBD 2023
-hale,Healthy life expectancy,Ireland,combined,2023,70.3,years,GBD 2023
-tobacco_sev,Tobacco exposure (SEV),Ireland,combined,1990,34.33,percent,GBD 2023
-tobacco_sev,Tobacco exposure (SEV),Ireland,combined,2000,31.66,percent,GBD 2023
-tobacco_sev,Tobacco exposure (SEV),Ireland,combined,2010,25.97,percent,GBD 2023
-tobacco_sev,Tobacco exposure (SEV),Ireland,combined,2013,23.48,percent,GBD 2023
-tobacco_sev,Tobacco exposure (SEV),Ireland,combined,2018,20.52,percent,GBD 2023
-tobacco_sev,Tobacco exposure (SEV),Ireland,combined,2021,19.66,percent,GBD 2023
-tobacco_sev,Tobacco exposure (SEV),Ireland,combined,2023,19.57,percent,GBD 2023
-alcohol_sev,Alcohol exposure (SEV),Ireland,combined,1990,16.01,percent,GBD 2023
-alcohol_sev,Alcohol exposure (SEV),Ireland,combined,2000,22.18,percent,GBD 2023
-alcohol_sev,Alcohol exposure (SEV),Ireland,combined,2010,20.5,percent,GBD 2023
-alcohol_sev,Alcohol exposure (SEV),Ireland,combined,2013,19.7,percent,GBD 2023
-alcohol_sev,Alcohol exposure (SEV),Ireland,combined,2018,18.69,percent,GBD 2023
-alcohol_sev,Alcohol exposure (SEV),Ireland,combined,2021,17.83,percent,GBD 2023
-alcohol_sev,Alcohol exposure (SEV),Ireland,combined,2023,17.35,percent,GBD 2023
-bmi_sev,High BMI exposure (SEV),Ireland,combined,2013,27.49,percent,GBD 2023
-bmi_sev,High BMI exposure (SEV),Ireland,combined,2018,28.86,percent,GBD 2023
-bmi_sev,High BMI exposure (SEV),Ireland,combined,2023,30.53,percent,GBD 2023
-airpol_sev,Air pollution exposure (SEV),Ireland,combined,1990,16.53,percent,GBD 2023
-airpol_sev,Air pollution exposure (SEV),Ireland,combined,2000,14.94,percent,GBD 2023
-airpol_sev,Air pollution exposure (SEV),Ireland,combined,2010,10.65,percent,GBD 2023
-airpol_sev,Air pollution exposure (SEV),Ireland,combined,2013,8.44,percent,GBD 2023
-airpol_sev,Air pollution exposure (SEV),Ireland,combined,2018,7.31,percent,GBD 2023
-airpol_sev,Air pollution exposure (SEV),Ireland,combined,2022,7.8,percent,GBD 2023
-airpol_sev,Air pollution exposure (SEV),Ireland,combined,2023,6.48,percent,GBD 2023
-radon_sev,Residential radon exposure (SEV),Ireland,combined,1990,49.81,percent,GBD 2023
-radon_sev,Residential radon exposure (SEV),Ireland,combined,2010,49.81,percent,GBD 2023
-radon_sev,Residential radon exposure (SEV),Ireland,combined,2020,49.81,percent,GBD 2023
-radon_sev,Residential radon exposure (SEV),Ireland,combined,2023,49.85,percent,GBD 2023
-mental_daly,Mental disorders burden,Ireland,combined,2013,2222.92,DALYs per 100000,GBD 2023
-mental_daly,Mental disorders burden,Ireland,combined,2016,2326.53,DALYs per 100000,GBD 2023
-mental_daly,Mental disorders burden,Ireland,combined,2019,2387.02,DALYs per 100000,GBD 2023
-mental_daly,Mental disorders burden,Ireland,combined,2020,2671.75,DALYs per 100000,GBD 2023
-mental_daly,Mental disorders burden,Ireland,combined,2023,2909.66,DALYs per 100000,GBD 2023
-diet_sev,Dietary risk exposure (SEV),Ireland,combined,1990,34.67,percent,GBD 2023
-diet_sev,Dietary risk exposure (SEV),Ireland,combined,2000,35.08,percent,GBD 2023
-diet_sev,Dietary risk exposure (SEV),Ireland,combined,2013,35.26,percent,GBD 2023
-diet_sev,Dietary risk exposure (SEV),Ireland,combined,2018,35.72,percent,GBD 2023
-diet_sev,Dietary risk exposure (SEV),Ireland,combined,2023,36.2,percent,GBD 2023
-enteric_daly,Enteric infections burden,Ireland,combined,1990,37.55,DALYs per 100000,GBD 2023
-enteric_daly,Enteric infections burden,Ireland,combined,2005,57.01,DALYs per 100000,GBD 2023
-enteric_daly,Enteric infections burden,Ireland,combined,2015,63.44,DALYs per 100000,GBD 2023
-enteric_daly,Enteric infections burden,Ireland,combined,2023,50.56,DALYs per 100000,GBD 2023
-oral_daly,Oral disorders burden,Ireland,combined,1990,293.03,DALYs per 100000,GBD 2023
-oral_daly,Oral disorders burden,Ireland,combined,2005,322.58,DALYs per 100000,GBD 2023
-oral_daly,Oral disorders burden,Ireland,combined,2013,266.85,DALYs per 100000,GBD 2023
-oral_daly,Oral disorders burden,Ireland,combined,2023,260.78,DALYs per 100000,GBD 2023
+measure,location,sex,age,cause,rei,metric,year,val,upper,lower
+Life expectancy,Ireland,Both,At birth,,,Years,2013,81.1,,
+Life expectancy,Ireland,Both,At birth,,,Years,2014,81.4,,
+Life expectancy,Ireland,Both,At birth,,,Years,2015,81.5,,
+Life expectancy,Ireland,Both,At birth,,,Years,2016,81.7,,
+Life expectancy,Ireland,Both,At birth,,,Years,2017,82,,
+Life expectancy,Ireland,Both,At birth,,,Years,2018,82.2,,
+Life expectancy,Ireland,Both,At birth,,,Years,2019,82.4,,
+Life expectancy,Ireland,Both,At birth,,,Years,2020,82.2,,
+Life expectancy,Ireland,Both,At birth,,,Years,2021,82.3,,
+Life expectancy,Ireland,Both,At birth,,,Years,2022,82.2,,
+Life expectancy,Ireland,Both,At birth,,,Years,2023,82.5,,
+HALE (Healthy life expectancy),Ireland,Both,At birth,,,Years,2013,69.8,,
+HALE (Healthy life expectancy),Ireland,Both,At birth,,,Years,2014,70,,
+HALE (Healthy life expectancy),Ireland,Both,At birth,,,Years,2015,70.1,,
+HALE (Healthy life expectancy),Ireland,Both,At birth,,,Years,2016,70.2,,
+HALE (Healthy life expectancy),Ireland,Both,At birth,,,Years,2017,70.4,,
+HALE (Healthy life expectancy),Ireland,Both,At birth,,,Years,2018,70.6,,
+HALE (Healthy life expectancy),Ireland,Both,At birth,,,Years,2019,70.7,,
+HALE (Healthy life expectancy),Ireland,Both,At birth,,,Years,2020,70.3,,
+HALE (Healthy life expectancy),Ireland,Both,At birth,,,Years,2021,70.3,,
+HALE (Healthy life expectancy),Ireland,Both,At birth,,,Years,2022,70.1,,
+HALE (Healthy life expectancy),Ireland,Both,At birth,,,Years,2023,70.3,,
+Summary exposure value,Ireland,Both,Age-standardized,,Tobacco,Percent,1990,0.3433,,
+Summary exposure value,Ireland,Both,Age-standardized,,Tobacco,Percent,2000,0.3166,,
+Summary exposure value,Ireland,Both,Age-standardized,,Tobacco,Percent,2010,0.2597,,
+Summary exposure value,Ireland,Both,Age-standardized,,Tobacco,Percent,2013,0.2348,,
+Summary exposure value,Ireland,Both,Age-standardized,,Tobacco,Percent,2018,0.2052,,
+Summary exposure value,Ireland,Both,Age-standardized,,Tobacco,Percent,2021,0.1966,,
+Summary exposure value,Ireland,Both,Age-standardized,,Tobacco,Percent,2023,0.1957,,
+Summary exposure value,Ireland,Both,Age-standardized,,High alcohol use,Percent,1990,0.1601,,
+Summary exposure value,Ireland,Both,Age-standardized,,High alcohol use,Percent,2000,0.2218,,
+Summary exposure value,Ireland,Both,Age-standardized,,High alcohol use,Percent,2010,0.205,,
+Summary exposure value,Ireland,Both,Age-standardized,,High alcohol use,Percent,2013,0.197,,
+Summary exposure value,Ireland,Both,Age-standardized,,High alcohol use,Percent,2018,0.1869,,
+Summary exposure value,Ireland,Both,Age-standardized,,High alcohol use,Percent,2021,0.1783,,
+Summary exposure value,Ireland,Both,Age-standardized,,High alcohol use,Percent,2023,0.1735,,
+Summary exposure value,Ireland,Both,Age-standardized,,High body-mass index,Percent,2013,0.2749,,
+Summary exposure value,Ireland,Both,Age-standardized,,High body-mass index,Percent,2018,0.2886,,
+Summary exposure value,Ireland,Both,Age-standardized,,High body-mass index,Percent,2023,0.3053,,
+Summary exposure value,Ireland,Both,Age-standardized,,Air pollution,Percent,1990,0.1653,,
+Summary exposure value,Ireland,Both,Age-standardized,,Air pollution,Percent,2000,0.1494,,
+Summary exposure value,Ireland,Both,Age-standardized,,Air pollution,Percent,2010,0.1065,,
+Summary exposure value,Ireland,Both,Age-standardized,,Air pollution,Percent,2013,0.0844,,
+Summary exposure value,Ireland,Both,Age-standardized,,Air pollution,Percent,2018,0.0731,,
+Summary exposure value,Ireland,Both,Age-standardized,,Air pollution,Percent,2022,0.078,,
+Summary exposure value,Ireland,Both,Age-standardized,,Air pollution,Percent,2023,0.0648,,
+Summary exposure value,Ireland,Both,Age-standardized,,Residential radon,Percent,1990,0.4981,,
+Summary exposure value,Ireland,Both,Age-standardized,,Residential radon,Percent,2010,0.4981,,
+Summary exposure value,Ireland,Both,Age-standardized,,Residential radon,Percent,2020,0.4981,,
+Summary exposure value,Ireland,Both,Age-standardized,,Residential radon,Percent,2023,0.4985,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,Mental disorders,,Rate,2013,2222.92,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,Mental disorders,,Rate,2016,2326.53,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,Mental disorders,,Rate,2019,2387.02,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,Mental disorders,,Rate,2020,2671.75,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,Mental disorders,,Rate,2023,2909.66,,
+Summary exposure value,Ireland,Both,Age-standardized,,Dietary risks,Percent,1990,0.3467,,
+Summary exposure value,Ireland,Both,Age-standardized,,Dietary risks,Percent,2000,0.3508,,
+Summary exposure value,Ireland,Both,Age-standardized,,Dietary risks,Percent,2013,0.3526,,
+Summary exposure value,Ireland,Both,Age-standardized,,Dietary risks,Percent,2018,0.3572,,
+Summary exposure value,Ireland,Both,Age-standardized,,Dietary risks,Percent,2023,0.362,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,Enteric infections,,Rate,1990,37.55,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,Enteric infections,,Rate,2005,57.01,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,Enteric infections,,Rate,2015,63.44,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,Enteric infections,,Rate,2023,50.56,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,Oral disorders,,Rate,1990,293.03,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,Oral disorders,,Rate,2005,322.58,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,Oral disorders,,Rate,2013,266.85,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,Oral disorders,,Rate,2023,260.78,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,Anxiety disorders,,Rate,2023,1301.7,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,Falls,,Rate,2023,1109.9,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,Low back pain,,Rate,2023,1069.6,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,Ischemic heart disease,,Rate,2023,1066.2,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,Depressive disorders,,Rate,2023,672.5,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,Drug use disorders,,Rate,2023,469.4,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,Headache disorders,,Rate,2023,670.6,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,Lung cancer,,Rate,2023,619.8,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,COPD,,Rate,2023,493.8,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,Self-harm,,Rate,2023,323.1,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,All causes,Tobacco,Percent,2023,0.077,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,All causes,High body-mass index,Percent,2023,0.066,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,All causes,High systolic blood pressure,Percent,2023,0.065,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,All causes,Dietary risks,Percent,2023,0.058,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,All causes,High fasting plasma glucose,Percent,2023,0.048,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,All causes,High alcohol use,Percent,2023,0.033,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,All causes,Occupational risks,Percent,2023,0.029,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,All causes,High LDL cholesterol,Percent,2023,0.025,,
+DALYs (Disability-Adjusted Life Years),Ireland,Both,Age-standardized,All causes,Kidney dysfunction,Percent,2023,0.027,,

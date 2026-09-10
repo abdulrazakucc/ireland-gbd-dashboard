@@ -26,4 +26,9 @@ ignore = ["A002"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q --strict-markers"
-filterwarnings = ["error::DeprecationWarning:app.*"]
+filterwarnings = [
+    "error::DeprecationWarning:app.*",
+    # matplotlib 3.9 calls pyparsing APIs that newer pyparsing marks deprecated.
+    # Not ours to fix, and it would bury our own warnings in every run.
+    "ignore:.*deprecated - use:DeprecationWarning:matplotlib.*",
+]

@@ -22,6 +22,9 @@ data/*.db-journal
 data/*.previous
 data/.*.building-*
 
+# Accounts: password hashes and session keys. Never commit them.
+data/access/
+
 # GBD Results Tool exports: large, and redistribution is governed by IHME's
 # data terms. Keep them out of version control.
 data/incoming/*

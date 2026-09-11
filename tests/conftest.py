@@ -26,6 +26,10 @@ from pathlib import Path
 os.environ["GBD_DB_PATH"] = str(Path(tempfile.mkdtemp(prefix="gbd-tests-")) / "unused.db")
 os.environ.pop("GBD_CORS_ORIGINS", None)
 os.environ.pop("GBD_EXPOSE_DOCS", None)
+# Tests run signed-out by default; tests/test_auth.py switches sign-in on.
+os.environ["GBD_AUTH_MODE"] = "off"
+for _var in ("GBD_SESSION_SECRET", "GBD_SESSION_SECRET_FILE", "GBD_USERS_FILE"):
+    os.environ.pop(_var, None)
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

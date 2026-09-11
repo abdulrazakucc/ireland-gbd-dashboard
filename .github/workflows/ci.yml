@@ -56,6 +56,14 @@ jobs:
       # and the app never answers. GBD_UID/GBD_GID are set inline rather than
       # in a job-level `env:`, which would take precedence over $GITHUB_ENV.
       # `make up` does the same thing from `id -u` / `id -g`.
+      # A throwaway account for this run only; the password is masked in logs.
+      - name: Prepare a sign-in for the smoke test
+        run: |
+          password=$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')
+          echo "::add-mask::$password"
+          echo "SMOKE_PASSWORD=$password" >> "$GITHUB_ENV"
+          echo "SMOKE_EMAIL=ci-smoke@example.org" >> "$GITHUB_ENV"
+
       - name: Build and start
         run: |
           echo "runner $(id -u):$(id -g) | ./data owned by $(stat -c '%u:%g' data)"
@@ -67,6 +75,8 @@ jobs:
             curl -sf http://127.0.0.1:8000/api/health && break
             sleep 1
           done
+          printf '%s\n' "$SMOKE_PASSWORD" \
+            | docker compose exec -T app python -m app.accounts add "$SMOKE_EMAIL" --password-stdin
           make smoke
 
       - name: Show logs on failure

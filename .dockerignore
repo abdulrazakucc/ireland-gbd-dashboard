@@ -15,6 +15,7 @@ data/gbd.db
 data/*.db*
 data/*.previous
 data/.*.building-*
+data/access/
 site/
 data/incoming/*
 !data/incoming/.gitkeep

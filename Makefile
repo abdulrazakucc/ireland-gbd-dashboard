@@ -71,6 +71,10 @@ help: ## Show this help
 	@grep -E '^(site|site-serve):.*## ' $(MAKEFILE_LIST) \
 		| awk 'BEGIN{FS=":.*?## "}{printf "    \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 	@echo ""
+	@echo "  Accounts (who can sign in):"
+	@grep -E '^(user-add|user-remove|user-list|user-export):.*## ' $(MAKEFILE_LIST) \
+		| awk 'BEGIN{FS=":.*?## "}{printf "    \033[36m%-15s\033[0m %s\n", $$1, $$2}'
+	@echo ""
 	@echo "  Data and housekeeping:"
 	@grep -E '^(refresh|clean|distclean):.*## ' $(MAKEFILE_LIST) \
 		| awk 'BEGIN{FS=":.*?## "}{printf "    \033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -163,6 +167,8 @@ run: seed ## Start the app in the background
 	@echo "    API        $(APP_URL)/api"
 	@echo ""
 	@echo "    make logs    follow output      make stop    shut down"
+	@$(PY) -c "from app import accounts; import sys; sys.exit(0 if accounts.load_users() else 1)" 2>/dev/null \
+		|| echo "    No accounts yet. Create one to sign in:  make user-add EMAIL=you@example.org"
 	@echo ""
 
 stop: ## Stop the local app
@@ -224,12 +230,23 @@ format: setup-dev ## Auto-fix formatting and import order
 audit: setup-dev ## Check runtime dependencies for known vulnerabilities
 	@$(PIP_AUDIT) -r requirements.txt
 
+# With SMOKE_EMAIL and SMOKE_PASSWORD set, it first proves the results refuse a
+# signed-out request, then signs in and checks everything as that user.
 smoke: ## Check a RUNNING app answers on every endpoint
 	@echo "==> Smoke testing $(APP_URL)"
-	@series=$$(curl -sf --max-time 5 "$(APP_URL)/api/series" \
+	@jar=$$(mktemp); trap 'rm -f "$$jar"' EXIT; \
+	if [ -n "$$SMOKE_EMAIL" ]; then \
+		code=$$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "$(APP_URL)/api/series"); \
+		if [ "$$code" = "401" ]; then echo "    ok   401  /api/series before signing in"; \
+		else echo "    FAIL $$code  /api/series before signing in (expected 401)"; exit 1; fi; \
+		python3 -c 'import json,os; print(json.dumps({"email": os.environ["SMOKE_EMAIL"], "password": os.environ["SMOKE_PASSWORD"]}))' \
+			| curl -sf -c "$$jar" -H 'Content-Type: application/json' --data-binary @- --max-time 10 "$(APP_URL)/api/auth/login" > /dev/null \
+			&& echo "    ok   200  /api/auth/login" || { echo "    FAIL signing in as $$SMOKE_EMAIL"; exit 1; }; \
+	fi; \
+	series=$$(curl -sf -b "$$jar" --max-time 5 "$(APP_URL)/api/series" \
 		| python3 -c 'import json,sys; print(json.load(sys.stdin)[0]["series_id"])') \
 		|| { echo "    FAIL  /api/series returned no series"; exit 1; }; \
-	ranked=$$(curl -sf --max-time 5 "$(APP_URL)/api/ranked/options" \
+	ranked=$$(curl -sf -b "$$jar" --max-time 5 "$(APP_URL)/api/ranked/options" \
 		| python3 -c 'import json,sys,urllib.parse as u; o=json.load(sys.stdin); \
 		print(u.urlencode({k: o[0][k] for k in ("type","release","measure","metric","location","sex","age","year")}) if o else "")'); \
 	for path in \
@@ -249,7 +266,7 @@ smoke: ## Check a RUNNING app answers on every endpoint
 		$${ranked:+"/api/ranked?$$ranked"} \
 		$${ranked:+"/api/ranked?$$ranked&forecast_years=3"} \
 		"/" ; do \
-		code=$$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$(APP_URL)$$path"); \
+		code=$$(curl -s -b "$$jar" -o /dev/null -w '%{http_code}' --max-time 20 "$(APP_URL)$$path"); \
 		if [ "$$code" = "200" ]; then echo "    ok   $$code  $$path"; \
 		else echo "    FAIL $$code  $$path"; fail=1; fi; \
 	done; \
@@ -266,6 +283,26 @@ site: setup ## Build the public landing page published to GitHub Pages
 site-serve: site ## Build the landing page and serve it exactly as Pages will
 	@echo "==> Landing page on http://127.0.0.1:$(SITE_PORT)/  (Ctrl-C to stop)"
 	@cd $(SITE_DIR) && $(realpath $(PY)) -m http.server $(SITE_PORT)
+
+## ------------------------------------------------------------ accounts ----
+# Passwords are typed at a hidden prompt: they never appear in shell history,
+# in git, or in any file other than the hashed users file (data/access/).
+
+.PHONY: user-add user-remove user-list user-export
+
+user-add: setup ## Create an account or set a new password (EMAIL=... [NAME=...])
+	@test -n "$(EMAIL)" || { echo "Usage: make user-add EMAIL=someone@example.org NAME='Full Name'"; exit 1; }
+	@$(PY) -m app.accounts add "$(EMAIL)" $(if $(NAME),--name "$(NAME)",)
+
+user-remove: setup ## Remove an account (EMAIL=...)
+	@test -n "$(EMAIL)" || { echo "Usage: make user-remove EMAIL=someone@example.org"; exit 1; }
+	@$(PY) -m app.accounts remove "$(EMAIL)"
+
+user-list: setup ## List who can sign in
+	@$(PY) -m app.accounts list
+
+user-export: setup ## Print the users file for the GBD_USERS_JSON GitHub secret
+	@$(PY) -m app.accounts export
 
 ## --------------------------------------------------- data and cleanup ----
 

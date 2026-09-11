@@ -26,8 +26,14 @@ Environment variables (all optional -- see ``.env.example``):
                         a browser on another site. Default: none.
 ``GBD_ENV``             ``development`` (default) or ``production``.
 ``GBD_TRUSTED_HOSTS``   Comma-separated HTTP Host values. Default: localhost.
-``GBD_AUTH_MODE``       ``off`` locally or ``proxy`` behind an identity-aware
-                        reverse proxy. Production requires ``proxy``.
+``GBD_AUTH_MODE``       How people sign in: ``password`` (default; email and
+                        password from the users file), ``proxy`` (an identity-
+                        aware reverse proxy) or ``off`` (automated tests only).
+``GBD_USERS_FILE``      Accounts for password sign-in.
+                        Default: ``<GBD_DATA_DIR>/access/users.json``
+``GBD_SESSION_SECRET``  Signs session cookies; 32+ characters, required in
+                        production (or ``GBD_SESSION_SECRET_FILE``).
+``GBD_SESSION_HOURS``   How long a sign-in lasts. Default: 12
 ``GBD_PROXY_SECRET``    Secret supplied by that proxy on every protected call.
 ``GBD_PROXY_SECRET_FILE`` Preferred mounted file containing that secret.
 ======================  ======================================================
@@ -90,9 +96,15 @@ TRUSTED_HOSTS: list[str] = _list_from_env("GBD_TRUSTED_HOSTS") or [
     "localhost",
     "testserver",
 ]
-AUTH_MODE: str = os.environ.get("GBD_AUTH_MODE", "off").strip().lower()
+AUTH_MODE: str = os.environ.get("GBD_AUTH_MODE", "password").strip().lower()
 AUTH_USER_HEADER: str = os.environ.get("GBD_AUTH_USER_HEADER", "X-Forwarded-User").strip()
 PROXY_SECRET: str = _secret("GBD_PROXY_SECRET", "GBD_PROXY_SECRET_FILE")
+USERS_FILE: Path = _dir_from_env("GBD_USERS_FILE", DATA_DIR / "access" / "users.json")
+SESSION_SECRET: str = _secret("GBD_SESSION_SECRET", "GBD_SESSION_SECRET_FILE")
+try:
+    SESSION_HOURS: int = max(1, min(int(os.environ.get("GBD_SESSION_HOURS", "12")), 24 * 30))
+except ValueError:
+    SESSION_HOURS = 12
 EXPOSE_DOCS: bool = os.environ.get("GBD_EXPOSE_DOCS", "false").strip().lower() in {
     "1",
     "true",

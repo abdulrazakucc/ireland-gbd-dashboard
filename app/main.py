@@ -32,7 +32,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
-from app import config
+from app import auth, config
 from app.routes import router
 
 __version__ = "3.0.0"
@@ -74,14 +74,15 @@ def _web_origins(values: list[str]) -> list[str]:
 
 
 def _script_hashes(static_dir: Path) -> str:
-    """CSP hashes for inline dashboard scripts, avoiding ``unsafe-inline``."""
-    index = static_dir / "index.html"
-    if not index.is_file():
-        return ""
-    scripts = re.findall(r"<script>(.*?)</script>", index.read_text(encoding="utf-8"), re.S)
+    """CSP hashes for the inline scripts of every served page, avoiding ``unsafe-inline``."""
+    scripts: set[str] = set()
+    for page in sorted(static_dir.rglob("*.html")):
+        scripts.update(
+            re.findall(r"<script>(.*?)</script>", page.read_text(encoding="utf-8"), re.S)
+        )
     return " ".join(
         f"'sha256-{base64.b64encode(hashlib.sha256(script.encode()).digest()).decode()}'"
-        for script in scripts
+        for script in sorted(scripts)
     )
 
 
@@ -98,8 +99,8 @@ def create_app(db_path: Path | None = None, cors_origins: list[str] | None = Non
     """
     if config.ENVIRONMENT not in {"development", "test", "production"}:
         raise RuntimeError("GBD_ENV must be development, test, or production")
-    if config.AUTH_MODE not in {"off", "proxy"}:
-        raise RuntimeError("GBD_AUTH_MODE must be off or proxy")
+    if config.AUTH_MODE not in {"off", "password", "proxy"}:
+        raise RuntimeError("GBD_AUTH_MODE must be password, proxy or off")
     if any("://" in host or "/" in host for host in config.TRUSTED_HOSTS):
         raise RuntimeError("GBD_TRUSTED_HOSTS entries must be hostnames, without schemes or paths")
     if config.ENVIRONMENT == "production" and "*" in config.TRUSTED_HOSTS:
@@ -108,10 +109,14 @@ def create_app(db_path: Path | None = None, cors_origins: list[str] | None = Non
         not config.AUTH_USER_HEADER or len(config.PROXY_SECRET) < 32
     ):
         raise RuntimeError("Proxy authentication requires a user header and a 32+ character secret")
-    if config.ENVIRONMENT == "production" and config.AUTH_MODE != "proxy":
-        raise RuntimeError(
-            "Production starts only with GBD_AUTH_MODE=proxy and a strong proxy secret"
-        )
+    if config.ENVIRONMENT == "production" and config.AUTH_MODE == "off":
+        raise RuntimeError("Production requires sign-in: GBD_AUTH_MODE=password or proxy")
+    if (
+        config.ENVIRONMENT == "production"
+        and config.AUTH_MODE == "password"
+        and len(config.SESSION_SECRET) < 32
+    ):
+        raise RuntimeError("Password sign-in in production requires a 32+ character session secret")
 
     origins = _web_origins(config.CORS_ORIGINS if cors_origins is None else cors_origins)
     script_hashes = _script_hashes(config.STATIC_DIR)
@@ -169,6 +174,18 @@ def create_app(db_path: Path | None = None, cors_origins: list[str] | None = Non
                     ),
                     request.url.path,
                 )
+        # Password sign-in guards the results, not the pages: the landing page
+        # and the app shell hold no data and must load for someone to sign in.
+        if (
+            config.AUTH_MODE == "password"
+            and request.url.path.startswith("/api/")
+            and request.url.path not in auth.PUBLIC_API
+            and auth.current_user(request) is None
+        ):
+            return apply_security_headers(
+                JSONResponse({"detail": "Sign in required"}, status_code=401),
+                request.url.path,
+            )
         response = await call_next(request)
         return apply_security_headers(response, request.url.path)
 
@@ -184,6 +201,7 @@ def create_app(db_path: Path | None = None, cors_origins: list[str] | None = Non
             allow_headers=["*"],
         )
 
+    app.include_router(auth.router)
     app.include_router(router)
 
     # Mounted LAST and at "/": FastAPI matches routes in declaration order, so

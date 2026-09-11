@@ -35,7 +35,10 @@ services:
       GBD_CORS_ORIGINS: ${GBD_CORS_ORIGINS:-}
       GBD_ENV: ${GBD_ENV:-development}
       GBD_TRUSTED_HOSTS: ${GBD_TRUSTED_HOSTS:-127.0.0.1,localhost}
-      GBD_AUTH_MODE: ${GBD_AUTH_MODE:-off}
+      # Email and password sign-in, from data/access/users.json (make user-add).
+      GBD_AUTH_MODE: ${GBD_AUTH_MODE:-password}
+      # Production: a 32+ character secret in a mounted file.
+      GBD_SESSION_SECRET_FILE: ${GBD_SESSION_SECRET_FILE:-}
       GBD_AUTH_USER_HEADER: ${GBD_AUTH_USER_HEADER:-X-Forwarded-User}
       # In production, mount a secret through an override and point this at it.
       # A file avoids exposing the value in `docker inspect` output.

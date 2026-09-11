@@ -230,7 +230,7 @@ class TestSecurity:
         monkeypatch.setattr(config, "ENVIRONMENT", "production")
         monkeypatch.setattr(config, "AUTH_MODE", "off")
         monkeypatch.setattr(config, "PROXY_SECRET", "")
-        with pytest.raises(RuntimeError, match="Production starts only"):
+        with pytest.raises(RuntimeError, match="requires sign-in"):
             create_app()
 
     def test_sensitive_responses_are_not_cached_and_have_browser_guards(self, client) -> None:

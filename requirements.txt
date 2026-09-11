@@ -3,4 +3,4 @@
 fastapi==0.141.1
 uvicorn[standard]==0.52.4
 pandas==2.2.2
-matplotlib==3.9.2    # PNG/PDF figure export (app/figures.py)
+matplotlib==3.11.1    # PNG/PDF figure export (app/figures.py)

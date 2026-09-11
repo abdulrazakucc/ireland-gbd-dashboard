@@ -25,6 +25,7 @@ from pathlib import Path
 
 os.environ["GBD_DB_PATH"] = str(Path(tempfile.mkdtemp(prefix="gbd-tests-")) / "unused.db")
 os.environ.pop("GBD_CORS_ORIGINS", None)
+os.environ.pop("GBD_EXPOSE_DOCS", None)
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

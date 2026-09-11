@@ -93,6 +93,9 @@ TRUSTED_HOSTS: list[str] = _list_from_env("GBD_TRUSTED_HOSTS") or [
 AUTH_MODE: str = os.environ.get("GBD_AUTH_MODE", "off").strip().lower()
 AUTH_USER_HEADER: str = os.environ.get("GBD_AUTH_USER_HEADER", "X-Forwarded-User").strip()
 PROXY_SECRET: str = _secret("GBD_PROXY_SECRET", "GBD_PROXY_SECRET_FILE")
-EXPOSE_DOCS: bool = os.environ.get(
-    "GBD_EXPOSE_DOCS", "false" if ENVIRONMENT == "production" else "true"
-).strip().lower() in {"1", "true", "yes", "on"}
+EXPOSE_DOCS: bool = os.environ.get("GBD_EXPOSE_DOCS", "false").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}

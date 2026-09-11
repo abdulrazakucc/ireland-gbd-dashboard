@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import csv
 import io
+import re
 import sqlite3
 
 import pytest
@@ -261,3 +262,42 @@ class TestSecurity:
         missing = tmp_path / "private" / "research.db"
         body = TestClient(create_app(db_path=missing)).get("/api/meta").json()
         assert str(missing) not in body["detail"]
+
+
+class TestNoApiInformationExposed:
+    """The dashboard is for results, not for advertising the API behind it."""
+
+    def test_api_documentation_is_not_served_by_default(self, client: TestClient) -> None:
+        for path in ("/docs", "/redoc", "/openapi.json"):
+            assert client.get(path).status_code == 404, path
+
+    def test_api_documentation_is_off_in_development_too(self, seed_db, monkeypatch) -> None:
+        import importlib
+
+        import app.config
+
+        monkeypatch.setenv("GBD_ENV", "development")
+        monkeypatch.delenv("GBD_EXPOSE_DOCS", raising=False)
+        assert importlib.reload(app.config).EXPOSE_DOCS is False
+        importlib.reload(app.config)
+
+    def test_api_documentation_can_be_switched_on_for_development(self, seed_db, monkeypatch):
+        from app import config
+
+        monkeypatch.setattr(config, "EXPOSE_DOCS", True)
+        app = TestClient(create_app(db_path=seed_db))
+        for path in ("/docs", "/openapi.json"):
+            assert app.get(path).status_code == 200, path
+
+    def test_dashboard_shows_no_api_reference_or_api_addresses(self, client: TestClient) -> None:
+        page = client.get("/").text
+        for text in ("API reference", "Live API", "Served live from", "/docs", "thin client"):
+            assert text not in page, text
+
+    def test_dashboard_does_not_name_its_server_technology(self, client: TestClient) -> None:
+        """Developer comments in the source may; the page a reader sees may not."""
+        page = client.get("/").text
+        markup = re.sub(
+            r"<script\b.*?</script>|<style\b.*?</style>|<!--.*?-->", "", page, flags=re.S
+        )
+        assert "FastAPI" not in markup

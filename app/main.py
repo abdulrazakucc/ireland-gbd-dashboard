@@ -126,6 +126,8 @@ def create_app(db_path: Path | None = None, cors_origins: list[str] | None = Non
         },
         docs_url="/docs" if config.EXPOSE_DOCS else None,
         redoc_url=None,
+        # The schema lists every endpoint; it is API documentation too.
+        openapi_url="/openapi.json" if config.EXPOSE_DOCS else None,
     )
 
     app.state.db_path = Path(db_path or config.DB_PATH)

@@ -38,7 +38,7 @@ Before deployment:
 
 1. Set `GBD_ENV=production`, `GBD_AUTH_MODE=proxy`, `GBD_TRUSTED_HOSTS`, and a
    proxy secret of at least 32 unpredictable characters.
-2. Keep `GBD_EXPOSE_DOCS=false` and CORS empty unless there is a reviewed need.
+2. Leave `GBD_EXPOSE_DOCS` unset (off) and CORS empty unless there is a reviewed need.
 3. Run `make check`; it includes tests, linting, and a vulnerability audit.
 4. Confirm `make site` publishes only the allow-listed public files.
 5. Confirm the reverse proxy applies access review, rate limits, audit policy,

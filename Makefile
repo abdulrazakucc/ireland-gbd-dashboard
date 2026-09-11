@@ -91,7 +91,6 @@ urls: ## Print the addresses the app serves on
 	@echo ""
 	@echo "    Dashboard  $(APP_URL)"
 	@echo "    JSON API   $(APP_URL)/api"
-	@echo "    API docs   $(APP_URL)/docs"
 	@echo ""
 
 doctor: ## Check this machine has what the project needs
@@ -161,7 +160,7 @@ run: seed ## Start the app in the background
 		|| { echo "!! App did not start -- see $(RUN_DIR)/app.log"; exit 1; }
 	@echo ""
 	@echo "    Dashboard  $(APP_URL)"
-	@echo "    API        $(APP_URL)/api      (docs at $(APP_URL)/docs)"
+	@echo "    API        $(APP_URL)/api"
 	@echo ""
 	@echo "    make logs    follow output      make stop    shut down"
 	@echo ""

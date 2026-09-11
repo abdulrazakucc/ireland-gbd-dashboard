@@ -556,24 +556,12 @@
   .status-line.ok    { background: rgba(12,163,12,0.09); color: var(--good);  border-color: rgba(12,163,12,0.25); }
   .status-line.error { background: rgba(208,59,59,0.10); color: var(--danger); border-color: rgba(208,59,59,0.30); }
 
-  /* -------------------------------------------------------- api list --- */
+  /* ------------------------------------------------------------ code --- */
 
-  .api-list { display: grid; gap: 8px; }
-  .api-row {
-    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-    padding: 9px 12px; border-radius: 9px; background: var(--surface-2);
-    border: 1px solid var(--border);
-  }
-  .verb {
-    font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em;
-    padding: 3px 7px; border-radius: 5px;
-    background: rgba(42,120,214,0.13); color: var(--series-1);
-  }
   code {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 12.5px; color: var(--text-primary);
   }
-  .api-row .what { margin-left: auto; font-size: 12px; color: var(--text-muted); }
 
   /* ---------------------------------------------------------- footer --- */
 
@@ -780,18 +768,6 @@
     <p class="source-note" id="rankSource"></p>
   </section>
 
-  <!-- API reference: live app only. A published snapshot has no API behind it,
-       so the script hides this section there rather than list dead addresses. -->
-  <section class="card" id="apiSection" style="--accent: var(--series-3);">
-    <div class="card-head">
-      <div>
-        <h2><span class="accent-bar"></span>API reference</h2>
-        <p class="desc">This dashboard is a thin client over a real API. Every endpoint can be queried directly.</p>
-      </div>
-    </div>
-    <div class="api-list" id="apiList"></div>
-  </section>
-
 </main>
 
 <footer>
@@ -814,10 +790,10 @@
         <p class="foot-cite" id="footCitation"></p>
       </div>
       <div>
-        <h3>Pipeline</h3>
-        FastAPI + SQLite backend. Each GBD release is imported by validating
-        the files, building a new database, verifying it, and only then
-        activating it &mdash; a failed refresh never replaces working data.
+        <h3>Data updates</h3>
+        Each GBD release is imported by validating the files, building a new
+        database, verifying it, and only then making it live &mdash; a failed
+        update never replaces working data.
       </div>
     </div>
     <div class="foot-note">
@@ -880,12 +856,8 @@ function apiUrl(path) {
   return route.replace(/^\/api\//, "api/") + ".json";   // meta, series, dimensions, health, ranked/options
 }
 
-// The origin the API reference list documents (live app only).
+// The server the dashboard talks to, named only when it cannot be reached.
 const API_SHOWN = API_BASE || location.origin;
-// Where a value on screen came from: a live route, or a file in the snapshot.
-const servedFrom = (route) => STATIC
-  ? "From the published snapshot of " + route
-  : "Served live from " + API_SHOWN + route;
 
 const $ = (id) => document.getElementById(id);
 const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -1378,7 +1350,7 @@ function drawTrend() {
   if (data.forecast_info) forecastNote.textContent = data.forecast_info.status === "available"
     ? data.forecast_info.model + " · approximate 95% prediction interval · " + data.forecast_info.note
     : "Forecast unavailable: " + data.forecast_info.note;
-  $("trendSource").textContent = "Unit: " + data.unit + ". " + data.release + ". " + servedFrom("/api/trend");
+  $("trendSource").textContent = "Unit: " + data.unit + ". Source: IHME, " + data.release + ".";
 
   // Every download carries the same selection, year range included.
   const stem = slug(data.title) + "_" + slug(data.release);
@@ -1552,7 +1524,7 @@ function drawRank() {
   if (data.forecast_info) forecastNote.textContent = data.forecast_info.status === "available"
     ? data.forecast_info.model + " · projected to " + data.forecast_year + " · " + data.forecast_info.note
     : "Forecast unavailable: " + data.forecast_info.note;
-  $("rankSource").textContent = "Unit: " + data.unit + ". " + data.release + ". " + servedFrom("/api/ranked");
+  $("rankSource").textContent = "Unit: " + data.unit + ". Source: IHME, " + data.release + ".";
   $("rankChartWrap").style.height = Math.max(260, items.length * 30 + 70) + "px";
 
   $("rankTableWrap").innerHTML =
@@ -1646,28 +1618,6 @@ function wireTableToggle(btnId, wrapId, chartWrapId) {
 wireTableToggle("trendTableToggle", "trendTableWrap", "trendChartWrap");
 wireTableToggle("rankTableToggle", "rankTableWrap", "rankChartWrap");
 
-/* ---- API reference list ------------------------------------------------ */
-
-function renderApiList() {
-  // A snapshot has no API of its own: every address listed would be dead.
-  $("apiSection").hidden = STATIC;
-  if (STATIC) return;
-  const rows = [
-    ["/api/meta", "Release, de-identified provenance, update date and citation"],
-    ["/api/dimensions", "Values available for every dimension"],
-    ["/api/series?measure=Deaths", "Catalogue of series, filterable by any dimension"],
-    ["/api/trend?series=…&forecast_years=5", "Observed trend plus optional forecast"],
-    ["/api/estimates?measure=…&age=…&sex=…", "Filtered rows, paged"],
-    ["/api/ranked?type=causes&forecast_years=5", "Observed and forecast cause/risk ranking"],
-    ["/api/export.csv?series=…", "CSV: every dimension, value and interval"],
-    ["/api/figure.png?series=…", "PNG or PDF figure with GBD citation"],
-    ["/docs", "Interactive documentation of every parameter"],
-  ];
-  $("apiList").innerHTML = rows.map(([path, what]) =>
-    '<div class="api-row"><span class="verb">GET</span><code>' + esc(API_SHOWN + path)
-    + '</code><span class="what">' + what + "</span></div>").join("");
-}
-
 /* ---- provenance -------------------------------------------------------- */
 
 function renderProvenance(meta) {
@@ -1676,9 +1626,6 @@ function renderProvenance(meta) {
   $("chips").innerHTML =
       '<span class="chip place"><svg class="map-icon" aria-hidden="true" focusable="false">'
     + '<use href="#ie-map"/></svg>' + esc(locationText) + '</span>'
-    + (STATIC
-        ? '<span class="chip"><span class="dot"></span>Snapshot ' + esc((meta.snapshot_built || "").slice(0, 10)) + "</span>"
-        : '<span class="chip"><span class="dot live"></span>Live API</span>')
     + '<span class="chip"><span class="dot"></span>' + esc(meta.release) + "</span>"
     + '<span class="chip"><span class="dot"></span>Updated ' + esc(fmtDate(meta.imported_at)) + "</span>"
     + '<span class="chip"><span class="dot"></span>' + esc(meta.prototype ? "Prototype seed data" : meta.source) + "</span>";
@@ -1697,8 +1644,6 @@ function renderProvenance(meta) {
 /* ---- init -------------------------------------------------------------- */
 
 async function init() {
-  renderApiList();
-
   let meta;
   try {
     meta = await fetchJSON("/api/meta");
@@ -1707,13 +1652,13 @@ async function init() {
     // a different problem from an unreachable API, with a different fix.
     const noDatabase = !STATIC && e.status === 503;
     $("chipStatus").className = "chip alert";
-    $("chipStatus").innerHTML = '<span class="dot down"></span>' + (noDatabase ? "Database not ready" : "API unreachable");
+    $("chipStatus").innerHTML = '<span class="dot down"></span>' + (noDatabase ? "Database not ready" : "Server unreachable");
     $("heroValue").innerHTML = "&mdash;";
-    $("heroDelta").textContent = noDatabase ? "The app is running, but its database is not ready" : "No connection to the API";
+    $("heroDelta").textContent = noDatabase ? "The app is running, but its database is not ready" : "No connection to the server";
     $("datasetLine").textContent = "Unavailable";
     showStatus(noDatabase ? e.detail
       : STATIC ? "This published snapshot is incomplete: its data files could not be loaded."
-      : "Could not reach the API at " + API_SHOWN
+      : "Could not reach the dashboard's server at " + API_SHOWN
         + ". Start it with: make run (local) or make up (Docker).", false);
     return;
   }

@@ -210,7 +210,6 @@ Either way, **one process serves everything on one port**:
 |---|---|
 | **Dashboard** | <http://127.0.0.1:8000> |
 | **JSON API** | <http://127.0.0.1:8000/api/...> |
-| **Interactive API docs** | <http://127.0.0.1:8000/docs> |
 
 There is no separate frontend server and no HTML file to open by hand. Confirm
 everything is working with `make smoke`.
@@ -335,7 +334,7 @@ ireland-gbd-dashboard/
 │   ├── queries.py                Every read, shared by the API, figures and import checks
 │   ├── gbd.py                    GBD rules: units, display scaling, citation
 │   ├── figures.py                PNG and PDF figures, with GBD context drawn on
-│   ├── schemas.py                Response models -> these generate /docs
+│   ├── schemas.py                Response models: the API's contract
 │   ├── routes.py                 The /api routes
 │   └── main.py                   App factory; mounts the dashboard at /
 │
@@ -413,7 +412,7 @@ port. The package is split by responsibility so each file has one job:
 | `queries.py` | Every read the application makes. The routes, the figure renderer and the importer's verification step all call these, so a selection has exactly one answer wherever it is asked. |
 | `gbd.py` | GBD rules in one place: what each metric's unit is, how a value is scaled for display, and how a release is cited. |
 | `figures.py` | Renders one series as a PNG or PDF with its release, every dimension, uncertainty, forecast disclosure, IHME citation, de-identified provenance and import date. Uses matplotlib's object API, never `pyplot`, which is not thread-safe. |
-| `schemas.py` | Pydantic models describing every response. They document the API at `/docs`, give the frontend a contract, and make a shape change fail loudly in tests. |
+| `schemas.py` | Pydantic models describing every response. They define the API's contract, give the frontend a contract, and make a shape change fail loudly in tests. |
 | `routes.py` | The `/api` endpoints. Thin: each one is a query from `queries.py` plus HTTP error handling. |
 | `main.py` | Builds the application — middleware, routes, and the static mount. |
 
@@ -546,8 +545,9 @@ specification for the Department of Health prototype.
 
 ## The API
 
-Interactive documentation, generated from the code, is at
-<http://127.0.0.1:8000/docs>.
+Interactive documentation (`/docs`, `/openapi.json`) is **off by default**, in
+every environment, so the application does not publish a map of its endpoints.
+For local development only, set `GBD_EXPOSE_DOCS=true`.
 
 Every estimate keeps all of its GBD dimensions — **release, measure, metric,
 location, sex, age, cause, risk and year** — with its value and 95%
@@ -784,7 +784,7 @@ below is required to run the project.
 | `GBD_PROXY_SECRET_FILE` | *(none)* | Preferred mounted file containing the proxy-to-app secret |
 | `GBD_PROXY_SECRET` | *(none)* | Non-container fallback; must be 32+ unpredictable characters, while a file avoids process/container inspection |
 | `GBD_AUTH_USER_HEADER` | `X-Forwarded-User` | Authenticated identity header set by the trusted proxy |
-| `GBD_EXPOSE_DOCS` | on locally, off in production | Enables `/docs` |
+| `GBD_EXPOSE_DOCS` | off | Set `true` to serve `/docs` and `/openapi.json` during local development |
 
 To set any of them, copy `.env.example` to `.env`. `make run` and `make up` both
 read it; `.env` is git-ignored and never copied into the image.

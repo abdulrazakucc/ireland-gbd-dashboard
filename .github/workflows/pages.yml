@@ -1,15 +1,16 @@
-name: Deploy landing page to GitHub Pages
+name: Deploy site to GitHub Pages
 
-# GitHub Pages hosts the public landing page ONLY. GBD results are available
-# only to approved users of the application, and a static site cannot check
-# who is asking -- every file on Pages is public -- so no estimate, export,
-# figure or dashboard code is ever published here. scripts/build_static_site.py
-# refuses to write anything else, and the verify step below checks again.
+# A static site cannot check who is asking -- every file on GitHub Pages is
+# public -- so what this publishes is one of two shapes:
 #
-# Access links: set the repository variable GBD_APP_URL (Settings -> Secrets
-# and variables -> Actions -> Variables) to the hosted application's address,
-# and the landing page's "Request access" / "Sign in" buttons point there.
-# Until it is set, the page says access opens when the application launches.
+#   * no GBD_USERS_JSON secret: the public landing page only;
+#   * with GBD_USERS_JSON: the landing page plus the application, whose results
+#     are encrypted and open only in the browser of someone signing in with an
+#     account from that file. See scripts/build_static_site.py.
+#
+# To give someone access: `make user-add EMAIL=...` locally, then set the
+# repository secret GBD_USERS_JSON (Settings -> Secrets and variables ->
+# Actions) to the output of `make user-export`, and re-run this workflow.
 #
 # One-time setup: Settings -> Pages -> Source: "GitHub Actions".
 
@@ -51,28 +52,39 @@ jobs:
       - name: Test
         run: pytest
 
-      - name: Build the landing page
+      - name: Build the site
         env:
+          GBD_USERS_JSON: ${{ secrets.GBD_USERS_JSON }}
           GBD_APP_URL: ${{ vars.GBD_APP_URL }}
         run: python -m scripts.build_static_site --out site
 
-      # Defence in depth: fail rather than publish a single result file.
-      - name: Verify nothing but the landing page is published
+      # Defence in depth: fail rather than publish a readable result.
+      - name: Verify what is published
         run: |
           set -euo pipefail
-          test -f site/index.html
-          test ! -e site/api
-          published=$(cd site && find . -type f | LC_ALL=C sort | tr '\n' ' ')
-          expected="./.nojekyll ./404.html ./assets/ucc-logo.png ./assets/zubair-kabir.png ./index.html "
-          if [ "$published" != "$expected" ]; then
-            echo "Unexpected files in site/: $published"
-            exit 1
-          fi
-          if grep -q -e '/api/' -e 'chart.umd.js' site/index.html; then
-            echo "The landing page references results or dashboard code"
-            exit 1
-          fi
-          echo "Verified: landing page only"
+          python - <<'PY'
+          import json, pathlib, sys
+          site = pathlib.Path("site")
+          files = sorted(str(p.relative_to(site)) for p in site.rglob("*") if p.is_file())
+          landing = {".nojekyll", "404.html", "index.html", "assets/ucc-logo.png", "assets/zubair-kabir.png"}
+          if (site / "api").exists():
+              sys.exit("An api/ directory must never be published")
+          if not (site / "app").exists():
+              if set(files) != landing:
+                  sys.exit(f"Unexpected files: {sorted(set(files) ^ landing)}")
+              print("Verified: landing page only")
+              sys.exit(0)
+          if not (site / "app/data.sealed").read_bytes().startswith(b"GBDS1"):
+              sys.exit("The results are not sealed")
+          keys = json.loads((site / "app/keys.json").read_text())
+          fields = {"id", "salt", "iterations", "nonce", "wrapped"}
+          if not keys["users"] or any(set(entry) != fields for entry in keys["users"]):
+              sys.exit("Unexpected account entries in keys.json")
+          for name in files:
+              if name != "app/data.sealed" and b'"series_id":' in (site / name).read_bytes():
+                  sys.exit(f"{name} contains readable results")
+          print(f"Verified: landing page and sealed application for {len(keys['users'])} account(s)")
+          PY
 
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
 

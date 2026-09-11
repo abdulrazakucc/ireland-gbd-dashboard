@@ -311,6 +311,7 @@ def main(argv: list[str] | None = None) -> int:
             if not users:
                 print(
                     f"No accounts in {path}. Create one with: make user-add EMAIL=you@example.org"
+                    " (or: python -m app.accounts add you@example.org)"
                 )
             for user in users.values():
                 print(f"{user.email:40} {user.name:24} since {user.created_at[:10]}")

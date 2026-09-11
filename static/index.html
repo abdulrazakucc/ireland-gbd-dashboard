@@ -4,10 +4,28 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Global Health Evidence | UCC School of Public Health</title>
-<meta name="description" content="A secure, multi-country Global Burden of Disease analysis platform from University College Cork, launching with Ireland.">
+<meta name="description" content="A secure multi-country Global Burden of Disease analysis platform from University College Cork, launching with Ireland. Access to results is by approval.">
 <meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#0f2942">
+<meta property="og:title" content="Global Health Evidence">
+<meta property="og:description" content="Secure, transparent multi-country GBD intelligence from UCC, launching with Ireland.">
+<meta property="og:type" content="website">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'sha256-yp/+HY1ThCU1zk2LZ7Il+weAbs1hhXKm76ETe879Jog='; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <link rel="icon" href="assets/ucc-logo.png">
+<script>
+  // Use the appearance a visitor chose in the dashboard, before first paint.
+  try { var t = localStorage.getItem("ucc-gbd-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+<!--
+  The public landing page. It holds no results and makes no API calls: GBD
+  results are available only to approved users of the application.
+
+  Its call to action exists in two marked versions, one of which is removed
+  when the page is published (see scripts/build_static_site.py): the live one
+  has "Request access" / "Sign in" buttons, for once the application is
+  hosted; the pending one says access opens when the application launches.
+  Design tokens, masthead and footer styles are copied from index.html.
+-->
 <style>
   /* ------------------------------------------------------------------ *
    * Design tokens.
@@ -358,145 +376,6 @@
   .dot.live { background: #4ade80; box-shadow: 0 0 0 3px rgba(74,222,128,0.22); }
   .dot.down { background: #ff7b7b; box-shadow: 0 0 0 3px rgba(255,123,123,0.22); }
 
-  /* --------------------------------------------------------- toolbar --- */
-
-  main { padding: 22px 0 60px; }
-
-  .toolbar {
-    background: var(--surface-1);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-sm);
-    padding: 14px 18px;
-    margin-bottom: 20px;
-    display: flex; align-items: flex-end; gap: 22px; flex-wrap: wrap;
-  }
-  .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-  .field > label {
-    font-size: 10.5px; font-weight: 700; letter-spacing: 0.11em;
-    text-transform: uppercase; color: var(--text-muted);
-  }
-  .toolbar .spacer { margin-left: auto; }
-  .field > .field-label {
-    font-size: 10.5px; font-weight: 700; letter-spacing: 0.11em;
-    text-transform: uppercase; color: var(--text-muted);
-  }
-  .toolbar .dataset { flex: 1 1 420px; }
-  .dataset-line {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px;
-    min-height: 38px; font-size: 13px; color: var(--text-secondary);
-  }
-  .dataset-line strong { color: var(--text-primary); font-weight: 650; }
-  .dataset-line code { font-size: 11.5px; color: var(--text-muted); }
-  .flag {
-    font-size: 11px; font-weight: 650; white-space: nowrap;
-    color: var(--danger); padding: 2px 9px; border-radius: 999px;
-    background: color-mix(in srgb, var(--danger) 9%, transparent);
-    border: 1px solid color-mix(in srgb, var(--danger) 32%, transparent);
-  }
-
-  /* Filter panel inside a card: every dimension the card's chart depends on. */
-  .filters {
-    display: grid; gap: 10px 12px; margin: 0 0 16px;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    padding: 12px 14px; border-radius: 11px;
-    background: var(--surface-2); border: 1px solid var(--border);
-  }
-  .filters .field { gap: 4px; }
-  .filters .field > label { font-size: 9.5px; }
-  .filters select { min-width: 0; width: 100%; font-size: 13px; padding: 7px 9px; }
-  .filters select:disabled { opacity: 0.75; cursor: default; }
-  .filters .wide { grid-column: span 2; }
-
-  select, .btn {
-    font: inherit; font-size: 13.5px;
-    padding: 9px 13px;
-    border-radius: 9px;
-    border: 1px solid var(--border);
-    background: var(--surface-1);
-    color: var(--text-primary);
-    cursor: pointer;
-    transition: background .15s, border-color .15s, color .15s;
-  }
-  select { min-width: 280px; }
-  select:hover, .btn:hover { border-color: var(--axis); background: var(--surface-2); }
-  select:focus-visible, .btn:focus-visible, a:focus-visible {
-    outline: 2px solid var(--series-1); outline-offset: 2px;
-  }
-
-  .segmented { display: inline-flex; background: var(--surface-sunken); border-radius: 10px; padding: 3px; gap: 3px; }
-  .segmented .btn {
-    border: none; background: transparent; border-radius: 8px;
-    padding: 7px 15px; font-size: 13.5px; color: var(--text-secondary);
-  }
-  .segmented .btn:hover { background: var(--surface-1); color: var(--text-primary); }
-  .segmented .btn[aria-pressed="true"] {
-    background: var(--surface-1); color: var(--text-primary);
-    font-weight: 600; box-shadow: var(--shadow-sm);
-  }
-  .btn.forecast {
-    border-color: color-mix(in srgb, var(--series-3) 42%, var(--border));
-    display: inline-flex; align-items: center; gap: 6px;
-  }
-  .btn.forecast[aria-pressed="true"] {
-    color: #fff; background: #08785a; border-color: #08785a;
-    box-shadow: 0 4px 12px rgba(8,120,90,0.22);
-  }
-  .horizon-select { min-width: 92px; width: auto; padding: 9px 10px; }
-  .forecast-note {
-    margin: 10px 0 0; padding: 9px 12px; border-radius: 9px;
-    font-size: 12px; color: var(--text-secondary);
-    border: 1px solid color-mix(in srgb, var(--series-3) 28%, var(--border));
-    background: color-mix(in srgb, var(--series-3) 7%, var(--surface-1));
-  }
-
-  /* ----------------------------------------------------------- tiles --- */
-
-  .tiles {
-    display: grid; gap: 16px; margin-bottom: 20px;
-    grid-template-columns: repeat(auto-fit, minmax(224px, 1fr));
-  }
-  .tile {
-    position: relative;
-    background: var(--surface-1);
-    /* A whisper of the tile's accent, so the row reads as four distinct
-       indicators at a glance. Falls back to the flat surface where
-       color-mix is unsupported. */
-    background: linear-gradient(152deg,
-      color-mix(in srgb, var(--accent) 9%, var(--surface-1)) 0%,
-      var(--surface-1) 62%);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-sm);
-    padding: 16px 18px 14px;
-    overflow: hidden;
-    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
-  }
-  .tile:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-md);
-    border-color: color-mix(in srgb, var(--accent) 38%, var(--border));
-  }
-  .tile::before {
-    content: ""; position: absolute; inset: 0 auto 0 0; width: 3px;
-    background: var(--accent, var(--series-1));
-  }
-  .tile-label {
-    display: flex; align-items: center; gap: 7px;
-    font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;
-  }
-  .tile-swatch { width: 9px; height: 9px; border-radius: 3px; background: var(--accent); flex: none; }
-  .tile-value { font-size: 30px; font-weight: 660; letter-spacing: -0.025em; line-height: 1.1; }
-  .tile-value .tile-unit {
-    font-size: 13px; font-weight: 500; color: var(--text-muted); margin-left: 5px; letter-spacing: 0;
-  }
-  .tile-foot {
-    display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-top: 8px;
-  }
-  .tile-delta { font-size: 12px; color: var(--text-secondary); }
-  .tile-delta .good { color: var(--good); font-weight: 650; }
-  .tile-spark { flex: none; }
-
   /* ----------------------------------------------------------- cards --- */
 
   .card {
@@ -546,21 +425,103 @@
   tbody tr:hover { background: var(--surface-2); }
   [hidden] { display: none !important; }
 
-  /* ---------------------------------------------------------- status --- */
 
-  .status-line {
-    display: flex; align-items: center; gap: 9px;
-    font-size: 12.5px; margin-bottom: 18px; padding: 11px 15px; border-radius: 10px;
-    border: 1px solid transparent;
+  /* --------------------------------------------------------- landing --- */
+
+  /* .wrap sets horizontal padding on main; set the vertical padding without undoing it. */
+  main.wrap { padding-top: 24px; padding-bottom: 56px; }
+
+  .landing-hero { align-items: center; }
+  .landing-hero .lead {
+    margin: 2px 0 0; max-width: 660px;
+    font-size: 15px; line-height: 1.55; color: var(--text-onnavy);
   }
-  .status-line.ok    { background: rgba(12,163,12,0.09); color: var(--good);  border-color: rgba(12,163,12,0.25); }
-  .status-line.error { background: rgba(208,59,59,0.10); color: var(--danger); border-color: rgba(208,59,59,0.30); }
 
-  /* ------------------------------------------------------------ code --- */
+  .eyebrow-label {
+    display: block; margin-bottom: 6px;
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.11em;
+    text-transform: uppercase; color: var(--text-muted);
+  }
 
-  code {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 12.5px; color: var(--text-primary);
+  .intro { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 30px; align-items: start; }
+  .intro h2 { font-size: 21px; line-height: 1.3; align-items: flex-start; }
+  .intro h2 .accent-bar { margin-top: 5px; flex: none; }
+  .intro p { margin: 12px 0 0 12px; font-size: 14.5px; line-height: 1.65; color: var(--text-secondary); }
+
+  .access-panel {
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px 20px;
+  }
+  .access-panel strong { display: block; font-size: 15px; color: var(--text-primary); }
+  .access-panel p { margin: 8px 0 0; font-size: 13.5px; line-height: 1.55; color: var(--text-secondary); }
+
+  .cta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    font: inherit; font-size: 14px; font-weight: 600; text-decoration: none;
+    padding: 10px 18px; border-radius: 10px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface-1); color: var(--text-primary);
+    transition: background .15s, border-color .15s, transform .15s;
+  }
+  .btn:hover { border-color: var(--axis); transform: translateY(-1px); }
+  .btn.primary { background: var(--ucc-navy-2); border-color: var(--ucc-navy-2); color: #fff; }
+  .btn.primary:hover { background: var(--ucc-blue); border-color: var(--ucc-blue); }
+  .btn:focus-visible, a:focus-visible { outline: 2px solid var(--series-1); outline-offset: 2px; }
+
+  .access-note {
+    margin: 16px 0 0; padding: 12px 14px; border-radius: 10px;
+    font-size: 13.5px; line-height: 1.5; color: var(--text-secondary);
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-left: 3px solid var(--ucc-gold);
+  }
+  .access-note a { color: var(--series-1); }
+
+  .section-title {
+    margin: 8px 0 14px; font-size: 12px; font-weight: 700; letter-spacing: 0.11em;
+    text-transform: uppercase; color: var(--text-muted);
+  }
+
+  .features {
+    display: grid; gap: 16px; margin-bottom: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  }
+  .feature {
+    position: relative; overflow: hidden;
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow-sm);
+    padding: 18px 20px 18px 22px;
+  }
+  .feature::before {
+    content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--accent);
+  }
+  .feature h3 { margin: 0 0 7px; font-size: 15px; font-weight: 650; color: var(--text-primary); }
+  .feature p { margin: 0; font-size: 13.5px; line-height: 1.55; color: var(--text-secondary); }
+
+  .steps {
+    list-style: none; counter-reset: step; margin: 4px 0 0; padding: 0;
+    display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+  .steps li {
+    counter-increment: step; position: relative;
+    padding: 14px 16px 14px 56px; border-radius: 11px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    font-size: 13.5px; line-height: 1.5; color: var(--text-secondary);
+  }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 15px; top: 14px;
+    width: 28px; height: 28px; border-radius: 50%;
+    display: grid; place-items: center;
+    background: var(--series-1); color: #fff; font-size: 13px; font-weight: 700;
+  }
+  .steps strong { display: block; margin-bottom: 3px; color: var(--text-primary); font-size: 14px; }
+
+  .two-col { display: grid; gap: 26px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .two-col h3 { margin: 0 0 8px; font-size: 15px; font-weight: 650; color: var(--text-primary); }
+  .two-col p { margin: 0 0 10px; font-size: 13.5px; line-height: 1.6; color: var(--text-secondary); }
+  .two-col a { color: var(--series-1); }
+
+  @media (max-width: 860px) {
+    .intro { grid-template-columns: 1fr; }
   }
 
   /* ---------------------------------------------------------- footer --- */
@@ -674,14 +635,16 @@
       </a>
     </div>
 
-    <div class="masthead-hero">
+    <div class="masthead-hero landing-hero">
       <div class="hero-figure">
-        <div class="hero-label" id="heroLabel">Life expectancy at birth, Ireland</div>
-        <div class="hero-value" id="heroValue">&mdash;<span class="hero-unit">years</span></div>
-        <div class="hero-delta" id="heroDelta">Loading live data&hellip;</div>
+        <div class="hero-label">Global Burden of Disease &middot; Ireland launch dataset</div>
+        <p class="lead">Observed trends, leading causes, risk factors and transparent forecasts,
+          designed to expand across countries without compromising research governance.</p>
       </div>
-      <div class="chips" id="chips">
-        <span class="chip" id="chipStatus"><span class="dot" id="chipDot"></span>Connecting&hellip;</span>
+      <div class="chips">
+        <span class="chip place"><svg class="map-icon" aria-hidden="true" focusable="false"><use href="#ie-map"/></svg>Ireland first &middot; global by design</span>
+        <span class="chip"><span class="dot"></span>Access by approval</span>
+        <span class="chip"><span class="dot"></span>Source: IHME GBD</span>
       </div>
     </div>
 
@@ -690,82 +653,110 @@
 
 <main class="wrap">
 
-  <div class="status-line" id="statusLine" hidden></div>
-
-  <!-- Which dataset is being served, and the page-wide appearance switch -->
-  <div class="toolbar">
-    <div class="field dataset">
-      <span class="field-label" id="datasetLabel">Dataset</span>
-      <div class="dataset-line" id="datasetLine" aria-labelledby="datasetLabel">Loading&hellip;</div>
+  <section class="card intro" style="--accent: var(--series-1);" aria-labelledby="introTitle">
+    <div>
+      <h2 id="introTitle"><span class="accent-bar"></span>Global health evidence, built to grow responsibly</h2>
+      <p>Global Health Evidence brings Global Burden of Disease (GBD) estimates, published by the
+        Institute for Health Metrics and Evaluation (IHME), into one refined analytical workspace.
+        Ireland is the launch dataset; country is a first-class dimension throughout the pipeline,
+        ready for additional approved locations without redesigning the application.</p>
+      <p>It is developed by the School of Public Health at University College Cork. Every figure
+        keeps its GBD release, uncertainty interval and de-identified provenance, so it can be interpreted
+        &mdash; and cited &mdash; with care.</p>
     </div>
-    <div class="field spacer">
-      <label for="themeToggle">Appearance</label>
-      <button class="btn" id="themeToggle" aria-pressed="false">&#9789;&nbsp; Dark</button>
-    </div>
-  </div>
-
-  <!-- Stat tiles -->
-  <section class="tiles" id="tiles" aria-label="Headline indicators"></section>
-
-  <!-- Trend -->
-  <section class="card" id="trendCard" style="--accent: var(--series-1);">
-    <div class="card-head">
-      <div>
-        <h2><span class="accent-bar"></span><span id="trendTitle">Trend</span></h2>
-        <p class="desc" id="trendDesc">Loading&hellip;</p>
+    <aside class="access-panel" aria-labelledby="accessTitle">
+      <span class="eyebrow-label">Access</span>
+      <strong id="accessTitle">Results are available to approved users only.</strong>
+      <p>Sign in with the email address and password the research team set up for you. Every
+        account is approved individually.</p>
+      <!-- ACCESS:LIVE -->
+      <div class="cta">
+        <a class="btn primary" href="app/">Sign in</a>
+        <a class="btn" href="https://research.ucc.ie/en/persons/zubair-kabir/" target="_blank" rel="noopener noreferrer">Request access</a>
       </div>
-      <div class="card-actions">
-        <button class="btn forecast" id="trendForecast" aria-pressed="false" title="Add an exploratory projection">&#10022;&nbsp; Forecast</button>
-        <select class="horizon-select" id="trendHorizon" aria-label="Trend forecast horizon" title="Forecast horizon">
-          <option value="3">3 years</option><option value="5" selected>5 years</option><option value="10">10 years</option>
-        </select>
-        <button class="btn" id="trendTableToggle" aria-pressed="false">Table view</button>
-        <a class="btn" id="downloadCsv" href="#" download title="Every dimension, value and uncertainty interval">&#8595;&nbsp; CSV</a>
-        <a class="btn" id="downloadPng" href="#" download title="Figure with GBD source and citation">&#8595;&nbsp; PNG</a>
-        <a class="btn" id="downloadPdf" href="#" download title="Vector figure with GBD source and citation">&#8595;&nbsp; PDF</a>
-      </div>
-    </div>
-    <div class="filters" id="trendFilters" role="group" aria-label="Trend filters"></div>
-    <div class="chart-wrap" id="trendChartWrap">
-      <canvas id="trendChart" role="img" aria-label="Line chart of the selected series, with its uncertainty interval"></canvas>
-    </div>
-    <div class="legend" id="trendLegend"></div>
-    <p class="forecast-note" id="trendForecastNote" hidden></p>
-    <div class="table-wrap" id="trendTableWrap" hidden></div>
-    <p class="source-note" id="trendSource"></p>
+      <!-- /ACCESS:LIVE -->
+      <!-- ACCESS:PENDING -->
+      <p class="access-note">
+        Access requests open when the secure application launches. Until then, questions
+        about access can go to the
+        <a href="https://research.ucc.ie/en/persons/zubair-kabir/" target="_blank" rel="noopener noreferrer">research lead</a>.
+      </p>
+      <!-- /ACCESS:PENDING -->
+    </aside>
   </section>
 
-  <!-- Ranked -->
-  <section class="card" id="rankCard" style="--accent: var(--series-1);">
+  <h2 class="section-title">What the application provides</h2>
+  <section class="features" aria-label="What the application provides">
+    <article class="feature" style="--accent: var(--series-1);">
+      <h3>Trends over time</h3>
+      <p>Follow any GBD measure by country, cause, risk factor, metric, age and sex, with its
+        95% uncertainty interval drawn around the estimate.</p>
+    </article>
+    <article class="feature" style="--accent: var(--series-2);">
+      <h3>Leading causes and risks</h3>
+      <p>See which causes of disease and which risk factors rank highest, for the year and
+        population group you choose.</p>
+    </article>
+    <article class="feature" style="--accent: var(--series-3);">
+      <h3>Optional forecasting</h3>
+      <p>Add a 3-, 5- or 10-year exploratory projection to trends and rankings, with prediction
+        intervals, model disclosure and a clear separation from observed evidence.</p>
+    </article>
+    <article class="feature" style="--accent: var(--series-4);">
+      <h3>Citable downloads</h3>
+      <p>Download the values behind every chart as CSV, or as PNG and PDF figures that carry the
+        GBD release and the IHME citation.</p>
+    </article>
+    <article class="feature" style="--accent: var(--series-2);">
+      <h3>Private by design</h3>
+      <p>Results are never published in readable form: online they are encrypted and open only
+        after signing in. Imports containing person-level or credential fields are rejected.</p>
+    </article>
+    <article class="feature" style="--accent: var(--series-1);">
+      <h3>Presentation mode</h3>
+      <p>Turn the latest results into full-screen slides for talks and teaching, closing with the
+        data source and citation.</p>
+    </article>
+  </section>
+
+  <section class="card" style="--accent: var(--series-3);" aria-labelledby="stepsTitle">
     <div class="card-head">
       <div>
-        <h2><span class="accent-bar"></span><span id="rankTitle">Leading causes</span></h2>
-        <p class="desc" id="rankDesc">Loading&hellip;</p>
-      </div>
-      <div class="card-actions">
-        <button class="btn forecast" id="rankForecast" aria-pressed="false" title="Project each ranked item from its own history">&#10022;&nbsp; Forecast</button>
-        <select class="horizon-select" id="rankHorizon" aria-label="Ranking forecast horizon" title="Forecast horizon">
-          <option value="3">3 years</option><option value="5" selected>5 years</option><option value="10">10 years</option>
-        </select>
-        <div class="segmented" role="group" aria-label="Rank causes or risk factors">
-          <button class="btn" id="btnCauses" aria-pressed="true">Top causes</button>
-          <button class="btn" id="btnRisks" aria-pressed="false">Top risks</button>
-        </div>
-        <button class="btn" id="rankTableToggle" aria-pressed="false">Table view</button>
+        <h2 id="stepsTitle"><span class="accent-bar"></span>How access works</h2>
+        <p class="desc">Access is granted to individuals, one request at a time.</p>
       </div>
     </div>
-    <div class="filters" id="rankFilters" role="group" aria-label="Ranking filters"></div>
-    <div class="chart-wrap tall" id="rankChartWrap">
-      <canvas id="rankChart" role="img" aria-label="Horizontal bar chart of the leading causes or risk factors"></canvas>
+    <ol class="steps">
+      <li><strong>Request access</strong>Contact the research team and tell them how you intend to
+        use the results.</li>
+      <li><strong>Your request is reviewed</strong>A member of the research team reviews each
+        request individually.</li>
+      <li><strong>Receive your sign-in</strong>Approved users are given an account for their email
+        address.</li>
+      <li><strong>Start exploring</strong>Sign in to explore trends and rankings, download figures
+        and present results.</li>
+    </ol>
+  </section>
+
+  <section class="card two-col" style="--accent: var(--series-4);" aria-label="About the data and your information">
+    <div>
+      <h3>About the data</h3>
+      <p>Estimates come from the
+        <a href="https://vizhub.healthdata.org/gbd-results/" target="_blank" rel="noopener">IHME Global Burden of Disease Results Tool</a>
+        and are used under IHME&rsquo;s
+        <a href="https://www.healthdata.org/gbd/about/data-terms" target="_blank" rel="noopener">Free-to-Use Data Terms</a>.
+        GBD is published in rounds, and the application records which release each figure comes from.</p>
+      <p>While the application is in development it runs on prototype data, and figures produced
+        from it are marked as not for citation.</p>
     </div>
-    <div class="table-wrap" id="rankTableWrap" hidden></div>
-    <p class="forecast-note" id="rankForecastNote" hidden></p>
-    <p class="source-note" id="rankCaveat" hidden>
-      Every cause in the loaded dataset is ranked together. GBD causes are hierarchical, so if an
-      export mixes levels, a parent (e.g. &ldquo;Mental disorders&rdquo;) appears alongside its own
-      sub-causes (e.g. &ldquo;Anxiety disorders&rdquo;). Download a single cause level to compare like with like.
-    </p>
-    <p class="source-note" id="rankSource"></p>
+    <div>
+      <h3>Privacy and governance</h3>
+      <p>The analytics pipeline accepts aggregate GBD exports only. It rejects common patient,
+        participant, contact, credential and direct-identifier fields before import.</p>
+      <p>The public site holds results only in encrypted form, opened in the browser after signing
+        in, and no API configuration, source filenames, checksums, credentials or logs. Passwords
+        are kept only as salted hashes, and production refuses to start without sign-in.</p>
+    </div>
   </section>
 
 </main>
@@ -787,13 +778,11 @@
         <a href="https://vizhub.healthdata.org/gbd-results/" target="_blank" rel="noopener">Global Burden of Disease Results Tool</a>.
         Used under IHME's
         <a href="https://www.healthdata.org/gbd/about/data-terms" target="_blank" rel="noopener">Free-to-Use Data Terms</a>.
-        <p class="foot-cite" id="footCitation"></p>
       </div>
       <div>
-        <h3>Data updates</h3>
-        Each GBD release is imported by validating the files, building a new
-        database, verifying it, and only then making it live &mdash; a failed
-        update never replaces working data.
+        <h3>About</h3>
+        Developed by the School of Public Health, University College Cork. Results are
+        available to approved users of the application only.
       </div>
     </div>
     <div class="foot-note">
@@ -802,913 +791,6 @@
     </div>
   </div>
 </footer>
-
-<script src="assets/chart.umd.js"></script>
-<script src="config.js"></script>
-<script>
-/* ---- API location -------------------------------------------------------
-   The dashboard runs in one of two shapes, set by config.js:
-
-   * "live"   -- the FastAPI app serves this page and the API from one
-                 process on one port, so calls go to /api/... on this page's
-                 own origin. Nothing to reconfigure when this is deployed
-                 behind a UCC hostname. Set window.API_BASE to point at an
-                 API on a different host.
-
-   * "static" -- files only, no server. Not currently used: GitHub Pages
-                 publishes the landing page only, because results are for
-                 approved users. apiUrl() below maps API paths onto files.
-
-   Everything after this block calls fetchJSON("/api/...") exactly as it
-   would against the live API; only apiUrl() knows which shape is in play. */
-const STATIC = window.API_MODE === "static";
-const API_BASE = window.API_BASE
-  || (location.protocol.startsWith("http") ? "" : "http://127.0.0.1:8000");
-
-// The dimensions that name one ranking file in a snapshot.
-const RANK_KEYS = ["type", "release", "measure", "metric", "location", "sex", "age", "year"];
-// Snapshot only: /api/ranked/options, whose entries each name their file.
-let rankedFiles = [];
-
-// "?a=1&b=2" from an object. null/undefined are left out; "" is kept, because
-// for cause and risk an empty value means "rows where it does not apply".
-function qs(params) {
-  const query = new URLSearchParams();
-  Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null) query.append(k, v); });
-  const text = query.toString();
-  return text ? "?" + text : "";
-}
-
-// Map a live API path onto the snapshot file that holds its response.
-function apiUrl(path) {
-  if (!STATIC) return API_BASE + path;
-  const [route, query] = path.split("?");
-  const q = new URLSearchParams(query || "");
-  const series = encodeURIComponent(q.get("series"));
-  if (route === "/api/trend")      return "api/trend/" + series + ".json";
-  if (route === "/api/export.csv") return "api/export/" + series + ".csv";
-  if (route === "/api/figure.png") return "api/figure/" + series + ".png";
-  if (route === "/api/figure.pdf") return "api/figure/" + series + ".pdf";
-  if (route === "/api/ranked") {
-    const hit = rankedFiles.find((o) => RANK_KEYS.every((k) => String(o[k]) === q.get(k)));
-    return hit ? "api/" + hit.file : "api/ranked/not-in-snapshot.json";
-  }
-  return route.replace(/^\/api\//, "api/") + ".json";   // meta, series, dimensions, health, ranked/options
-}
-
-// The server the dashboard talks to, named only when it cannot be reached.
-const API_SHOWN = API_BASE || location.origin;
-
-const $ = (id) => document.getElementById(id);
-const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-
-/* ---- theme ------------------------------------------------------------- */
-
-const prefersDark = window.matchMedia("(prefers-color-scheme: dark)");
-
-function currentTheme() {
-  return document.documentElement.dataset.theme
-      || (prefersDark.matches ? "dark" : "light");
-}
-function applyTheme(theme) {
-  document.documentElement.dataset.theme = theme;
-  const dark = theme === "dark";
-  const btn = $("themeToggle");
-  btn.setAttribute("aria-pressed", String(dark));
-  btn.innerHTML = dark ? "&#9788;&nbsp; Light" : "&#9789;&nbsp; Dark";
-  try { localStorage.setItem("ucc-gbd-theme", theme); } catch (e) { /* private mode */ }
-  redrawCharts();
-}
-$("themeToggle").addEventListener("click", () => {
-  applyTheme(currentTheme() === "dark" ? "light" : "dark");
-});
-(function initTheme() {
-  let saved = null;
-  try { saved = localStorage.getItem("ucc-gbd-theme"); } catch (e) { /* private mode */ }
-  if (saved) {
-    document.documentElement.dataset.theme = saved;
-  }
-  const dark = currentTheme() === "dark";
-  $("themeToggle").setAttribute("aria-pressed", String(dark));
-  $("themeToggle").innerHTML = dark ? "&#9788;&nbsp; Light" : "&#9789;&nbsp; Dark";
-})();
-// Follow the OS only while the user has not chosen explicitly.
-prefersDark.addEventListener("change", () => {
-  let saved = null;
-  try { saved = localStorage.getItem("ucc-gbd-theme"); } catch (e) { /* private mode */ }
-  if (!saved) redrawCharts();
-});
-
-/* ---- fetch ------------------------------------------------------------- */
-
-async function fetchJSON(path) {
-  const res = await fetch(apiUrl(path));
-  if (!res.ok) {
-    // Keep the API's own explanation -- a 503 names the command that builds
-    // the database -- so the page can show it instead of a bare status code.
-    let detail = "";
-    try {
-      const body = await res.json();
-      if (typeof body.detail === "string") detail = body.detail;
-    } catch (e) { /* not JSON, e.g. a missing snapshot file */ }
-    const error = new Error(path + " -> HTTP " + res.status + (detail ? ": " + detail : ""));
-    error.status = res.status;
-    error.detail = detail;
-    throw error;
-  }
-  return res.json();
-}
-
-function showStatus(msg, ok) {
-  const el = $("statusLine");
-  el.hidden = false;
-  el.className = "status-line " + (ok ? "ok" : "error");
-  el.textContent = msg;
-}
-
-/* ---- formatting -------------------------------------------------------- */
-
-const fmt = (v) => {
-  const abs = Math.abs(v);
-  if (abs >= 1000) return v.toLocaleString(undefined, { maximumFractionDigits: 0 });
-  if (abs >= 100)  return v.toLocaleString(undefined, { maximumFractionDigits: 1 });
-  return v.toLocaleString(undefined, { maximumFractionDigits: 2 });
-};
-// Values arrive exactly as stored (IHME exports Percent as a proportion); the
-// API says how to scale each series for display, so that rule lives in one place.
-const scaled = (v, scale) => (v === null || v === undefined ? null : v * scale);
-const fmtDate = (iso) => {
-  const d = new Date(iso);
-  return isNaN(d) ? String(iso || "") : d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
-};
-const slug = (text) => String(text).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "gbd";
-// Dimension values come from imported files, so escape them before they touch innerHTML.
-const esc = (text) => String(text ?? "").replace(/[&<>"']/g,
-  (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-// Every dimension of a series that is not already its title.
-const describe = (d) => [
-  d.measure !== d.title ? d.measure : null,
-  // "Rate (per 100,000)" adds information; "Years (years)" only repeats it.
-  d.unit.toLowerCase() !== d.metric.toLowerCase() ? d.metric + " (" + d.unit + ")" : d.metric,
-  d.age, d.sex, d.location,
-].filter(Boolean).join(" · ");
-
-/* ---- dimensions and filters -------------------------------------------- */
-
-const NONE = "";   // a cause or risk that does not apply to the series
-const DIM_LABEL = {
-  release: "Release", measure: "Measure", cause: "Cause", risk: "Risk", metric: "Metric",
-  age: "Age", sex: "Sex", location: "Location", year: "Year", from: "From", to: "To",
-};
-// Defaults a new selection falls back to, in order of preference.
-const PREFER = {
-  sex: ["Both"],
-  age: ["Age-standardized", "All ages", "At birth", "<1 year"],
-  cause: [NONE, "All causes"],
-  risk: [NONE],
-  location: ["Ireland"],
-};
-
-function ageRank(age) {
-  if (/standardi[sz]ed/i.test(age)) return -3;
-  if (/^all ages$/i.test(age)) return -2;
-  if (/birth/i.test(age)) return -1;
-  const m = age.match(/\d+(\.\d+)?/);
-  return m ? parseFloat(m[0]) - (age.trim().startsWith("<") ? 0.5 : 0) : 999;
-}
-
-function sortValues(dim, values) {
-  const copy = [...values];
-  if (dim === "year") return copy.sort((a, b) => b - a);   // latest first
-  if (dim === "age") return copy.sort((a, b) => ageRank(a) - ageRank(b) || a.localeCompare(b));
-  if (dim === "sex") {
-    const order = (v) => { const i = ["Both", "Female", "Male"].indexOf(v); return i < 0 ? 9 : i; };
-    return copy.sort((a, b) => order(a) - order(b) || a.localeCompare(b));
-  }
-  return copy.sort((a, b) => (b === NONE) - (a === NONE) || String(a).localeCompare(String(b)));
-}
-
-function pick(dim, values, current) {
-  if (values.includes(current)) return current;
-  for (const preferred of PREFER[dim] || []) if (values.includes(preferred)) return preferred;
-  return values[0];
-}
-
-// Walk the dimensions in order, narrowing the pool of catalogue entries at each
-// step. A select only ever offers values that still lead to real data, so any
-// combination a reader can choose exists -- no dead ends, no empty charts.
-function cascade(pool, dims, current) {
-  const selection = {}, options = {};
-  for (const dim of dims) {
-    const values = sortValues(dim, [...new Set(pool.map((entry) => entry[dim] ?? NONE))]);
-    options[dim] = values;
-    selection[dim] = pick(dim, values, current[dim]);
-    pool = pool.filter((entry) => (entry[dim] ?? NONE) === selection[dim]);
-  }
-  return { selection, options, pool };
-}
-
-const optionText = (dim, value) =>
-  value === NONE && (dim === "cause" || dim === "risk") ? "Not applicable" : String(value);
-
-// One labelled select per dimension. Release and location are left out while
-// the dataset has a single value for them; every other dimension stays
-// visible (disabled when there is no choice) so the full selection is always
-// on screen -- a chart is meaningless without its age, sex and metric.
-function renderFilters(containerId, fields, onChange) {
-  const box = $(containerId);
-  const focused = document.activeElement && document.activeElement.id;
-  box.innerHTML = "";
-  fields.forEach(({ dim, values, value, wide }) => {
-    if ((dim === "release" || dim === "location") && values.length <= 1) return;
-    const id = containerId + "-" + dim;
-    const field = document.createElement("div");
-    field.className = "field" + (wide ? " wide" : "");
-    const label = document.createElement("label");
-    label.htmlFor = id;
-    label.textContent = DIM_LABEL[dim];
-    const select = document.createElement("select");
-    select.id = id;
-    values.forEach((v) => select.add(new Option(optionText(dim, v), v)));
-    select.value = String(value);
-    select.disabled = values.length <= 1;
-    select.addEventListener("change", () => onChange(dim, select.value));
-    field.append(label, select);
-    box.append(field);
-  });
-  // Re-rendering replaces the elements; keep keyboard focus where it was.
-  if (focused && focused.startsWith(containerId + "-") && $(focused)) $(focused).focus();
-}
-
-/* ---- chart plumbing ---------------------------------------------------- */
-
-let trendChart, rankChart;
-const state = {
-  meta: null,
-  catalogue: [],          // /api/series: every series and the years it covers
-  rankOptions: [],        // /api/ranked/options: every rankable combination
-  trendSel: {}, trendRange: {}, trendParams: {}, trend: null,
-  trendForecast: false, trendHorizon: 5,
-  rankType: "causes", rankSel: {}, ranked: null,
-  rankForecast: false, rankHorizon: 5,
-  tiles: null,
-};
-
-// Chart.js defaults that match the design tokens.
-function baseFont() {
-  Chart.defaults.font.family = 'system-ui, -apple-system, "Segoe UI", sans-serif';
-  Chart.defaults.font.size = 12;
-  Chart.defaults.color = css("--text-muted");
-}
-
-// Shared tooltip styling: a surface-coloured card, text in text tokens.
-function tooltipStyle() {
-  return {
-    enabled: true,
-    backgroundColor: css("--surface-1"),
-    titleColor: css("--text-primary"),
-    bodyColor: css("--text-secondary"),
-    borderColor: css("--border"),
-    borderWidth: 1,
-    padding: 12,
-    cornerRadius: 9,
-    displayColors: true,
-    boxWidth: 9,
-    boxHeight: 9,
-    boxPadding: 5,
-    usePointStyle: true,
-    titleFont: { weight: "600", size: 12.5 },
-    bodyFont: { size: 12.5 },
-  };
-}
-
-// Crosshair: a hairline dropped from the hovered point to the baseline.
-const crosshairPlugin = {
-  id: "crosshair",
-  afterDatasetsDraw(chart) {
-    const active = chart.tooltip && chart.tooltip.getActiveElements
-      ? chart.tooltip.getActiveElements() : [];
-    if (!active.length) return;
-    const { ctx, chartArea } = chart;
-    const x = active[0].element.x;
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(x, chartArea.top);
-    ctx.lineTo(x, chartArea.bottom);
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = css("--axis");
-    ctx.stroke();
-    ctx.restore();
-  },
-};
-
-// Direct label on the final point of the line -- selective, not every point.
-const endLabelPlugin = {
-  id: "endLabel",
-  afterDatasetsDraw(chart) {
-    const meta = chart.getDatasetMeta(0);
-    if (!meta || !meta.data || !meta.data.length) return;
-    const values = chart.data.datasets[0].data;
-    let lastIndex = values.length - 1;
-    while (lastIndex >= 0 && values[lastIndex] === null) lastIndex -= 1;
-    if (lastIndex < 0) return;
-    const last = meta.data[lastIndex];
-    const value = values[lastIndex];
-    const { ctx, chartArea } = chart;
-    const text = fmt(value);
-    ctx.save();
-    ctx.font = '600 12.5px system-ui, -apple-system, "Segoe UI", sans-serif';
-    const w = ctx.measureText(text).width;
-    // Place outside the point if there is room, otherwise flip inside.
-    let x = last.x + 12;
-    let align = "left";
-    if (x + w > chartArea.right) { x = last.x - 12; align = "right"; }
-    ctx.textAlign = align;
-    ctx.textBaseline = "middle";
-    ctx.fillStyle = css("--text-primary");
-    ctx.fillText(text, x, last.y);
-    ctx.restore();
-  },
-};
-
-// Value at each bar tip. Bars are the one series, so the axis carries the
-// scale and these labels carry the exact numbers (also the contrast relief).
-const barValuePlugin = {
-  id: "barValue",
-  afterDatasetsDraw(chart) {
-    const meta = chart.getDatasetMeta(0);
-    if (!meta || !meta.data) return;
-    const { ctx, chartArea } = chart;
-    const values = chart.data.datasets[0].data;
-    ctx.save();
-    ctx.font = '600 12px system-ui, -apple-system, "Segoe UI", sans-serif';
-    ctx.textBaseline = "middle";
-    meta.data.forEach((bar, i) => {
-      const text = fmt(values[i]);
-      const w = ctx.measureText(text).width;
-      // Outside the bar end when it fits; never clipped, never overflowing.
-      if (bar.x + 10 + w <= chartArea.right) {
-        ctx.textAlign = "left";
-        ctx.fillStyle = css("--text-secondary");
-        ctx.fillText(text, bar.x + 10, bar.y);
-      } else {
-        ctx.textAlign = "right";
-        ctx.fillStyle = "#ffffff";
-        ctx.fillText(text, bar.x - 10, bar.y);
-      }
-    });
-    ctx.restore();
-  },
-};
-
-/* ---- sparkline (inline SVG, no library) -------------------------------- */
-
-function sparkline(values, color) {
-  const w = 108, h = 34, pad = 4;
-  const min = Math.min(...values), max = Math.max(...values);
-  const span = (max - min) || 1;
-  const pts = values.map((v, i) => [
-    pad + (i / (values.length - 1 || 1)) * (w - 2 * pad),
-    h - pad - ((v - min) / span) * (h - 2 * pad),
-  ]);
-  const line = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
-  const area = line + " L " + pts[pts.length - 1][0].toFixed(1) + " " + (h - pad)
-             + " L " + pts[0][0].toFixed(1) + " " + (h - pad) + " Z";
-  const end = pts[pts.length - 1];
-  return '<svg class="tile-spark" width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" aria-hidden="true">'
-    + '<path d="' + area + '" fill="' + color + '" opacity="0.10"/>'
-    + '<path d="' + line + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
-    + '<circle cx="' + end[0].toFixed(1) + '" cy="' + end[1].toFixed(1) + '" r="4" fill="' + color + '"'
-    + ' stroke="' + css("--surface-1") + '" stroke-width="2"/>'
-    + "</svg>";
-}
-
-/* ---- stat tiles and hero ----------------------------------------------- */
-
-// Curated headline picks, matched by name rather than by id so they survive a
-// new export. A tile whose series is not in the loaded dataset is left out.
-// slot: which validated categorical slot the tile's accent uses.
-// goodDown: true where a falling line is the good direction.
-const TILE_SPEC = [
-  { label: "Healthy life expectancy", slot: 1, goodDown: false, measure: /^HALE\b/i },
-  { label: "Tobacco exposure",  slot: 2, goodDown: true, measure: /summary exposure value/i, risk: /^tobacco$/i },
-  { label: "High BMI exposure", slot: 3, goodDown: true, measure: /summary exposure value/i, risk: /high body-mass index/i },
-  { label: "Air pollution exposure", slot: 4, goodDown: true, measure: /summary exposure value/i, risk: /^air pollution$/i },
-];
-const HERO_SPEC = { measure: /^life expectancy$/i };
-
-// The best catalogue match for a spec: preferred sex, age and location, then
-// the series with the most years.
-function findSeries(spec) {
-  const matches = state.catalogue.filter((s) =>
-    ["measure", "cause", "risk"].every((d) => !spec[d] || spec[d].test(s[d] || "")));
-  const score = (s) => ["sex", "age", "location"].reduce((sum, d) => {
-    const i = (PREFER[d] || []).indexOf(s[d]);
-    return sum + (i < 0 ? 9 : i);
-  }, 0);
-  return matches.sort((a, b) => score(a) - score(b) || b.years.length - a.years.length)[0] || null;
-}
-
-async function renderTiles() {
-  state.tiles = await Promise.all(TILE_SPEC.map(async (spec) => {
-    const entry = findSeries(spec);
-    if (!entry) return { spec, data: null };
-    try { return { spec, data: await fetchJSON("/api/trend" + qs({ series: entry.series_id })) }; }
-    catch (e) { return { spec, data: null }; }
-  }));
-  drawTiles();
-}
-
-function drawTiles() {
-  $("tiles").innerHTML = state.tiles.map(({ spec, data }) => {
-    if (!data || !data.series.length) return "";
-    const color = css("--series-" + spec.slot);
-    const values = data.series.map((p) => p.value * data.display_scale);
-    const first = values[0], last = values[values.length - 1];
-    const change = last - first;
-    const falling = change < 0;
-    // Direction is good when it moves the way this indicator should move.
-    const isGood = spec.goodDown ? falling : !falling;
-    const arrow = falling ? "↓" : "↑";
-    const pct = first ? Math.abs(change / first) * 100 : 0;
-    return ''
-      + '<article class="tile" style="--accent: ' + color + ';" title="' + esc(describe(data)) + '">'
-      +   '<div class="tile-label"><span class="tile-swatch"></span>' + esc(spec.label) + '</div>'
-      +   '<div class="tile-value">' + fmt(last)
-      +     '<span class="tile-unit">' + esc(data.unit) + '</span></div>'
-      +   '<div class="tile-foot">'
-      +     '<div class="tile-delta">'
-      +       '<span class="' + (isGood ? "good" : "") + '">' + arrow + " " + fmt(Math.abs(change))
-      +       (pct ? " (" + pct.toFixed(0) + "%)" : "") + '</span>'
-      +       '<br>since ' + data.series[0].year
-      +     '</div>'
-      +     sparkline(values, color)
-      +   '</div>'
-      + '</article>';
-  }).join("");
-}
-
-async function renderHero() {
-  const entry = findSeries(HERO_SPEC);
-  try {
-    if (!entry) throw new Error("no life expectancy series");
-    const le = await fetchJSON("/api/trend" + qs({ series: entry.series_id }));
-    const first = le.series[0], last = le.series[le.series.length - 1];
-    const gain = last.value - first.value;
-    $("heroLabel").textContent = "Life expectancy"
-      + (/birth|<1 year/i.test(le.age) ? " at birth" : " (" + le.age + ")") + ", " + le.location;
-    $("heroValue").innerHTML = fmt(last.value) + '<span class="hero-unit">years (' + last.year + ')</span>';
-    $("heroDelta").innerHTML = "<strong>" + (gain < 0 ? "−" : "+") + fmt(Math.abs(gain)) + " years</strong> since "
-      + first.year
-      + (last.lower !== null ? " &middot; 95% UI " + fmt(last.lower) + "–" + fmt(last.upper)
-                             : " &middot; healthy life expectancy tracked alongside");
-  } catch (e) {
-    $("heroValue").innerHTML = "&mdash;";
-    $("heroDelta").textContent = "Life expectancy is not in the loaded dataset";
-  }
-}
-
-/* ---- trend chart ------------------------------------------------------- */
-
-const TREND_DIMS = ["release", "measure", "cause", "risk", "metric", "age", "sex", "location"];
-const WIDE = new Set(["measure", "cause", "risk"]);
-
-// Resolve the selection to one series, fit the year range to it, and redraw
-// the filter panel. Returns the catalogue entry for the series.
-function updateTrendFilters(changed) {
-  const { selection, options, pool } = cascade(state.catalogue, TREND_DIMS, state.trendSel);
-  state.trendSel = selection;
-  const entry = pool[0];
-  const years = entry.years;
-  // Every series opens on all of its years. Only a range the reader chose is
-  // carried over, and only while the new series still covers it -- otherwise a
-  // range left over from the previous series would silently narrow downloads.
-  let { from, to, custom } = state.trendRange;
-  if (!custom || !years.includes(from)) from = years[0];
-  if (!custom || !years.includes(to)) to = years[years.length - 1];
-  if (from > to) { if (changed === "to") from = to; else to = from; }
-  const whole = from === years[0] && to === years[years.length - 1];
-  state.trendRange = { from, to, custom: Boolean(custom) && !whole };
-
-  const fields = TREND_DIMS.map((dim) => ({ dim, values: options[dim], value: selection[dim], wide: WIDE.has(dim) }));
-  if (!STATIC) fields.push({ dim: "from", values: years, value: from }, { dim: "to", values: years, value: to });
-  renderFilters("trendFilters", fields, (dim, value) => {
-    if (dim === "from" || dim === "to") Object.assign(state.trendRange, { [dim]: Number(value), custom: true });
-    else state.trendSel[dim] = value;
-    loadTrend(dim);
-  });
-  return entry;
-}
-
-async function loadTrend(changed) {
-  const entry = updateTrendFilters(changed);
-  const { from, to } = state.trendRange;
-  const whole = from === entry.years[0] && to === entry.years[entry.years.length - 1];
-  const params = {
-    series: entry.series_id,
-    ...(STATIC || whole ? {} : { year_from: from, year_to: to }),
-    ...(!STATIC && state.trendForecast ? { forecast_years: state.trendHorizon } : {}),
-  };
-  try {
-    state.trend = await fetchJSON("/api/trend" + qs(params));
-    state.trendParams = params;
-    drawTrend();
-  } catch (e) {
-    showStatus("Could not load that series: " + e.message, false);
-  }
-}
-
-function drawTrend() {
-  const data = state.trend;
-  if (!data) return;
-  const color = css("--series-1");
-  const surface = css("--surface-1");
-  const k = data.display_scale;
-  const forecast = data.forecast || [];
-  const observedYears = data.series.map((p) => p.year);
-  const years = [...observedYears, ...forecast.map((p) => p.year)];
-  const values = data.series.map((p) => p.value * k);
-  const lower = data.series.map((p) => scaled(p.lower, k));
-  const upper = data.series.map((p) => scaled(p.upper, k));
-  const forecastValues = forecast.map((p) => p.value * k);
-  const forecastLower = forecast.map((p) => scaled(p.lower, k));
-  const forecastUpper = forecast.map((p) => scaled(p.upper, k));
-  const band = data.has_uncertainty;
-  const span = observedYears[0] === observedYears[observedYears.length - 1]
-    ? observedYears[0] : observedYears[0] + "–" + observedYears[observedYears.length - 1];
-
-  $("trendTitle").textContent = data.title;
-  $("trendDesc").textContent = describe(data) + " · " + span;
-  $("trendLegend").innerHTML =
-    '<span class="key" style="--accent:' + color + '"><i></i>Estimate</span>'
-    + (band ? '<span class="key band" style="--accent:' + color + '"><i></i>95% uncertainty interval</span>'
-            : '<span class="key">No uncertainty interval in the source data</span>')
-    + (forecast.length ? '<span class="key" style="--accent:' + css("--series-3")
-      + '"><i style="border-top:2px dashed currentColor;background:none"></i>Exploratory forecast</span>' : '');
-  const forecastNote = $("trendForecastNote");
-  forecastNote.hidden = !data.forecast_info;
-  if (data.forecast_info) forecastNote.textContent = data.forecast_info.status === "available"
-    ? data.forecast_info.model + " · approximate 95% prediction interval · " + data.forecast_info.note
-    : "Forecast unavailable: " + data.forecast_info.note;
-  $("trendSource").textContent = "Unit: " + data.unit + ". Source: IHME, " + data.release + ".";
-
-  // Every download carries the same selection, year range included.
-  const stem = slug(data.title) + "_" + slug(data.release);
-  [["downloadCsv", "/api/export.csv", "csv"], ["downloadPng", "/api/figure.png", "png"],
-   ["downloadPdf", "/api/figure.pdf", "pdf"]].forEach(([id, route, ext]) => {
-    $(id).href = apiUrl(route + qs(state.trendParams));
-    $(id).setAttribute("download", stem + "." + ext);
-  });
-
-  // Table twin -- every value and interval readable without relying on the chart.
-  $("trendTableWrap").innerHTML =
-    "<table><caption>" + esc(data.title) + " &mdash; " + esc(describe(data)) + "</caption>"
-    + "<thead><tr><th>Year</th><th>Type</th><th class='num'>Value</th><th class='num'>Lower</th><th class='num'>Upper</th></tr></thead><tbody>"
-    + data.series.map((p, i) => "<tr><td>" + p.year + "</td><td>Observed</td><td class='num'>" + fmt(values[i])
-        + "</td><td class='num'>" + (lower[i] === null ? "&ndash;" : fmt(lower[i])) + "</td><td class='num'>"
-        + (upper[i] === null ? "&ndash;" : fmt(upper[i])) + "</td></tr>").join("")
-    + forecast.map((p, i) => "<tr><td>" + p.year + "</td><td>Forecast</td><td class='num'>" + fmt(forecastValues[i])
-        + "</td><td class='num'>" + fmt(forecastLower[i]) + "</td><td class='num'>" + fmt(forecastUpper[i]) + "</td></tr>").join("")
-    + "</tbody></table>";
-
-  const datasets = [{
-    label: data.title,
-    data: [...values, ...forecast.map(() => null)],
-    borderColor: color,
-    backgroundColor: color + "1a",    // ~10% wash, only when there is no band
-    borderWidth: 2,
-    fill: !band,
-    tension: 0.28,
-    pointRadius: 4,                   // 8px marker
-    pointHoverRadius: 6,
-    pointBackgroundColor: color,
-    pointBorderColor: surface,        // 2px surface ring
-    pointBorderWidth: 2,
-    pointHitRadius: 24,               // generous hit target
-  }];
-  if (band) {
-    // Upper bound filled down to the lower bound ("+1"); gaps stay gaps.
-    const bound = { borderWidth: 0, pointRadius: 0, pointHitRadius: 0, tension: 0.28, spanGaps: false };
-    datasets.push({ ...bound, label: "Upper", data: [...upper, ...forecast.map(() => null)], fill: "+1", backgroundColor: color + "33" },
-                  { ...bound, label: "Lower", data: [...lower, ...forecast.map(() => null)], fill: false });
-  }
-  if (forecast.length) {
-    const forecastColor = css("--series-3");
-    const prefix = data.series.map((_, i) => i === data.series.length - 1 ? values[i] : null);
-    datasets.push({
-      label: "Forecast", data: [...prefix, ...forecastValues], borderColor: forecastColor,
-      borderDash: [7, 5], borderWidth: 2, tension: 0.2, pointRadius: 4,
-      pointBackgroundColor: forecastColor, pointBorderColor: surface, pointBorderWidth: 2,
-    });
-    const gap = data.series.map(() => null);
-    const bound = { borderWidth: 0, pointRadius: 0, pointHitRadius: 0, tension: 0.2, spanGaps: false };
-    datasets.push({ ...bound, label: "Forecast upper", data: [...gap, ...forecastUpper], fill: "+1", backgroundColor: forecastColor + "24" },
-                  { ...bound, label: "Forecast lower", data: [...gap, ...forecastLower], fill: false });
-  }
-
-  if (trendChart) trendChart.destroy();
-  baseFont();
-  trendChart = new Chart($("trendChart"), {
-    type: "line",
-    data: { labels: years, datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      layout: { padding: { right: 46, top: 8 } },
-      interaction: { mode: "index", intersect: false },
-      plugins: {
-        legend: { display: false },       // the HTML legend names estimate and band
-        tooltip: Object.assign(tooltipStyle(), {
-          filter: (item) => item.dataset.label === data.title
-            || (item.dataset.label === "Forecast" && item.dataIndex >= data.series.length),
-          callbacks: {
-            title: (items) => "Year " + items[0].label,
-            label: (ctx) => {
-              const projected = ctx.dataset.label === "Forecast";
-              const i = projected ? ctx.dataIndex - data.series.length : ctx.dataIndex;
-              const value = projected ? forecastValues[i] : values[i];
-              const lo = projected ? forecastLower[i] : lower[i];
-              const hi = projected ? forecastUpper[i] : upper[i];
-              return " " + (projected ? "Forecast " : "") + fmt(value) + " " + data.unit
-                + (lo !== null ? "  (95% " + (projected ? "PI " : "UI ") + fmt(lo) + "–" + fmt(hi) + ")" : "");
-            },
-          },
-        }),
-      },
-      scales: {
-        x: {
-          grid: { display: false },
-          border: { color: css("--axis") },
-          ticks: { color: css("--text-muted"), padding: 6 },
-        },
-        y: {
-          grid: { color: css("--grid"), drawTicks: false },
-          border: { display: false },
-          ticks: { color: css("--text-muted"), padding: 10, callback: (v) => fmt(v) },
-          title: { display: true, text: data.unit, color: css("--text-muted"), font: { size: 11.5 } },
-        },
-      },
-    },
-    plugins: [crosshairPlugin, endLabelPlugin],
-  });
-}
-
-/* ---- ranked chart ------------------------------------------------------ */
-
-const RANK_DIMS = ["release", "measure", "metric", "age", "sex", "location", "year"];
-
-function setRankType(type) {
-  state.rankType = type;
-  $("btnCauses").setAttribute("aria-pressed", String(type === "causes"));
-  $("btnRisks").setAttribute("aria-pressed", String(type === "risks"));
-  loadRank();
-}
-
-async function loadRank() {
-  const pool = state.rankOptions.filter((o) => o.type === state.rankType);
-  if (!pool.length) {
-    state.ranked = null;
-    if (rankChart) { rankChart.destroy(); rankChart = null; }
-    $("rankFilters").innerHTML = "";
-    $("rankTableWrap").innerHTML = "";
-    $("rankCaveat").hidden = true;
-    $("rankForecastNote").hidden = true;
-    $("rankTitle").textContent = state.rankType === "causes" ? "Leading causes" : "Leading risk factors";
-    $("rankDesc").textContent = "Nothing in the loaded dataset can be ranked this way.";
-    $("rankSource").textContent = "";
-    return;
-  }
-  const { selection, options, pool: match } = cascade(pool, RANK_DIMS, state.rankSel);
-  state.rankSel = selection;
-  renderFilters("rankFilters",
-    RANK_DIMS.map((dim) => ({ dim, values: options[dim], value: selection[dim], wide: dim === "measure" })),
-    (dim, value) => { state.rankSel[dim] = dim === "year" ? Number(value) : value; loadRank(); });
-  const option = match[0];
-  try {
-    const params = Object.fromEntries(RANK_KEYS.map((k) => [k, option[k]]));
-    if (!STATIC && state.rankForecast) params.forecast_years = state.rankHorizon;
-    state.ranked = await fetchJSON("/api/ranked" + qs(params));
-    drawRank();
-  } catch (e) {
-    showStatus("Could not load that ranking: " + e.message, false);
-  }
-}
-
-function drawRank() {
-  const data = state.ranked;
-  if (!data) return;
-  const causes = data.type === "causes";
-  // Causes and risks are shown one at a time -- each is a single series, so
-  // each gets one slot, not a colour per bar.
-  const color = causes ? css("--series-1") : css("--series-2");
-  const k = data.display_scale;
-  const observedItems = data.items.map((it) => ({ label: it.label, v: it.value * k, lo: scaled(it.lower, k), hi: scaled(it.upper, k) }));
-  const projected = (data.forecast_items || []).map((it) => ({
-    label: it.label, v: it.value * k, lo: scaled(it.lower, k), hi: scaled(it.upper, k),
-  }));
-  const observedByLabel = Object.fromEntries(observedItems.map((it) => [it.label, it]));
-  const projectedByLabel = Object.fromEntries(projected.map((it) => [it.label, it]));
-  // When projected values exist, order the comparison by the projected rank.
-  const items = projected.length
-    ? projected.map((it) => observedByLabel[it.label]).filter(Boolean)
-    : observedItems;
-  const ui = items.some((it) => it.lo !== null);
-
-  $("rankCard").style.setProperty("--accent", color);
-  $("rankTitle").textContent = (causes ? "Leading causes, " : "Leading risk factors, ") + data.year
-    + (projected.length ? " → " + data.forecast_year : "");
-  $("rankDesc").textContent = "Ranked by " + describe({ ...data, title: null });
-  $("rankCaveat").hidden = !causes;
-  const forecastNote = $("rankForecastNote");
-  forecastNote.hidden = !data.forecast_info;
-  if (data.forecast_info) forecastNote.textContent = data.forecast_info.status === "available"
-    ? data.forecast_info.model + " · projected to " + data.forecast_year + " · " + data.forecast_info.note
-    : "Forecast unavailable: " + data.forecast_info.note;
-  $("rankSource").textContent = "Unit: " + data.unit + ". Source: IHME, " + data.release + ".";
-  $("rankChartWrap").style.height = Math.max(260, items.length * 30 + 70) + "px";
-
-  $("rankTableWrap").innerHTML =
-    "<table><caption>" + (causes ? "Leading causes" : "Leading risk factors") + " &mdash; "
-    + esc(describe({ ...data, title: null })) + ", " + data.year + "</caption>"
-    + "<thead><tr><th>" + (projected.length ? "Forecast rank" : "#") + "</th><th>" + (causes ? "Cause" : "Risk factor") + "</th><th class='num'>Observed " + data.year + "</th>"
-    + (projected.length ? "<th class='num'>Forecast " + data.forecast_year + "</th>" : "")
-    + (ui ? "<th class='num'>Observed 95% UI</th>" : "") + "</tr></thead><tbody>"
-    + items.map((it, i) => "<tr><td>" + (i + 1) + "</td><td>" + esc(it.label) + "</td><td class='num'>"
-        + fmt(it.v) + "</td>" + (projected.length ? "<td class='num'>" + (projectedByLabel[it.label]
-          ? fmt(projectedByLabel[it.label].v) : "&ndash;") + "</td>" : "")
-        + (ui ? "<td class='num'>" + (it.lo === null ? "&ndash;"
-        : fmt(it.lo) + "&ndash;" + fmt(it.hi)) + "</td>" : "") + "</tr>").join("")
-    + "</tbody></table>";
-
-  if (rankChart) rankChart.destroy();
-  baseFont();
-  rankChart = new Chart($("rankChart"), {
-    type: "bar",
-    data: {
-      labels: items.map((it) => it.label),
-      datasets: [{
-        label: "Observed " + data.year,
-        data: items.map((it) => it.v),
-        backgroundColor: color,
-        borderRadius: 4,          // rounded data-end
-        borderSkipped: "start",   // square at the baseline
-        barThickness: 18,         // <= 24px
-      }, ...(projected.length ? [{
-        label: "Forecast " + data.forecast_year,
-        data: items.map((it) => projectedByLabel[it.label]?.v ?? null),
-        backgroundColor: css("--series-3") + "b8",
-        borderColor: css("--series-3"), borderWidth: 1, borderRadius: 4,
-        borderSkipped: "start", barThickness: 13,
-      }] : [])],
-    },
-    options: {
-      indexAxis: "y",
-      responsive: true,
-      maintainAspectRatio: false,
-      layout: { padding: { right: 18 } },
-      plugins: {
-        legend: { display: Boolean(projected.length), labels: { color: css("--text-secondary"), usePointStyle: true } },
-        tooltip: Object.assign(tooltipStyle(), {
-          callbacks: {
-            label: (ctx) => {
-              const it = ctx.datasetIndex ? projectedByLabel[items[ctx.dataIndex].label] : items[ctx.dataIndex];
-              return " " + fmt(it.v) + " " + data.unit
-                + (it.lo !== null ? "  (95% " + (ctx.datasetIndex ? "PI " : "UI ") + fmt(it.lo) + "–" + fmt(it.hi) + ")" : "");
-            },
-          },
-        }),
-      },
-      scales: {
-        x: {
-          grace: "16%",           // headroom so tip labels are never clipped
-          grid: { color: css("--grid"), drawTicks: false },
-          border: { display: false },
-          ticks: { color: css("--text-muted"), padding: 6, callback: (v) => fmt(v) },
-          title: { display: true, text: data.unit, color: css("--text-muted"), font: { size: 11.5 } },
-        },
-        y: {
-          grid: { display: false },
-          border: { color: css("--axis") },
-          ticks: { color: css("--text-secondary"), padding: 8, autoSkip: false },
-        },
-      },
-    },
-    plugins: [barValuePlugin],
-  });
-}
-
-function redrawCharts() {
-  if (state.trend) drawTrend();
-  if (state.ranked) drawRank();
-  // Sparklines are inline SVG, so they carry their own colours -- redraw them.
-  if (state.tiles) drawTiles();
-}
-
-/* ---- table toggles ----------------------------------------------------- */
-
-function wireTableToggle(btnId, wrapId, chartWrapId) {
-  $(btnId).addEventListener("click", () => {
-    const showTable = $(wrapId).hidden;
-    $(wrapId).hidden = !showTable;
-    $(chartWrapId).hidden = showTable;
-    $(btnId).setAttribute("aria-pressed", String(showTable));
-    $(btnId).textContent = showTable ? "Chart view" : "Table view";
-  });
-}
-wireTableToggle("trendTableToggle", "trendTableWrap", "trendChartWrap");
-wireTableToggle("rankTableToggle", "rankTableWrap", "rankChartWrap");
-
-/* ---- provenance -------------------------------------------------------- */
-
-function renderProvenance(meta) {
-  const locations = [...new Set(state.catalogue.map((entry) => entry.location))];
-  const locationText = locations.length > 1 ? locations.length + " locations" : (locations[0] || "Ireland") + " launch dataset";
-  $("chips").innerHTML =
-      '<span class="chip place"><svg class="map-icon" aria-hidden="true" focusable="false">'
-    + '<use href="#ie-map"/></svg>' + esc(locationText) + '</span>'
-    + '<span class="chip"><span class="dot"></span>' + esc(meta.release) + "</span>"
-    + '<span class="chip"><span class="dot"></span>Updated ' + esc(fmtDate(meta.imported_at)) + "</span>"
-    + '<span class="chip"><span class="dot"></span>' + esc(meta.prototype ? "Prototype seed data" : meta.source) + "</span>";
-
-  $("datasetLine").innerHTML =
-      "<strong>" + esc(meta.release) + "</strong>"
-    + "<span>" + meta.row_count.toLocaleString() + " estimates &middot; "
-    + meta.series_count.toLocaleString() + " series &middot; " + meta.year_min + "&ndash;" + meta.year_max + "</span>"
-    + "<span>Updated " + esc(fmtDate(meta.imported_at)) + " &middot; " + esc(meta.source) + "</span>"
-    + meta.source_files.map((f) => '<code title="De-identified provenance · ' + f.row_count + ' rows">'
-        + esc(f.label) + " &middot; " + f.row_count.toLocaleString() + " rows</code>").join("")
-    + (meta.prototype ? '<span class="flag" title="' + esc(meta.notice) + '">Prototype data &mdash; not for citation</span>' : "");
-  $("footCitation").textContent = meta.citation;
-}
-
-/* ---- init -------------------------------------------------------------- */
-
-async function init() {
-  let meta;
-  try {
-    meta = await fetchJSON("/api/meta");
-  } catch (e) {
-    // A 503 means the app is up but its database is missing or out of date --
-    // a different problem from an unreachable API, with a different fix.
-    const noDatabase = !STATIC && e.status === 503;
-    $("chipStatus").className = "chip alert";
-    $("chipStatus").innerHTML = '<span class="dot down"></span>' + (noDatabase ? "Database not ready" : "Server unreachable");
-    $("heroValue").innerHTML = "&mdash;";
-    $("heroDelta").textContent = noDatabase ? "The app is running, but its database is not ready" : "No connection to the server";
-    $("datasetLine").textContent = "Unavailable";
-    showStatus(noDatabase ? e.detail
-      : STATIC ? "This published snapshot is incomplete: its data files could not be loaded."
-      : "Could not reach the dashboard's server at " + API_SHOWN
-        + ". Start it with: make run (local) or make up (Docker).", false);
-    return;
-  }
-  state.meta = meta;
-  renderProvenance(meta);
-
-  try {
-    [state.catalogue, state.rankOptions] = await Promise.all([
-      fetchJSON("/api/series"), fetchJSON("/api/ranked/options")]);
-    renderProvenance(meta);
-  } catch (e) {
-    showStatus("Could not load the list of available series: " + e.message, false);
-    return;
-  }
-  if (STATIC) rankedFiles = state.rankOptions;
-  if (!state.catalogue.length) {
-    showStatus("The loaded dataset contains no estimates.", false);
-    return;
-  }
-
-  // Open on life expectancy, as the dashboard always has, when it is present.
-  const opening = findSeries(HERO_SPEC) || state.catalogue[0];
-  state.trendSel = Object.fromEntries(TREND_DIMS.map((d) => [d, opening[d] ?? NONE]));
-
-  await Promise.all([renderHero(), renderTiles(), loadTrend(), loadRank()]);
-}
-
-$("btnCauses").addEventListener("click", () => setRankType("causes"));
-$("btnRisks").addEventListener("click", () => setRankType("risks"));
-$("trendForecast").addEventListener("click", () => {
-  state.trendForecast = !state.trendForecast;
-  $("trendForecast").setAttribute("aria-pressed", String(state.trendForecast));
-  loadTrend();
-});
-$("trendHorizon").addEventListener("change", (event) => {
-  state.trendHorizon = Number(event.target.value);
-  if (state.trendForecast) loadTrend();
-});
-$("rankForecast").addEventListener("click", () => {
-  state.rankForecast = !state.rankForecast;
-  $("rankForecast").setAttribute("aria-pressed", String(state.rankForecast));
-  loadRank();
-});
-$("rankHorizon").addEventListener("change", (event) => {
-  state.rankHorizon = Number(event.target.value);
-  if (state.rankForecast) loadRank();
-});
-
-init();
-</script>
 
 </body>
 </html>

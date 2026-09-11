@@ -24,17 +24,18 @@ Senior Lecturer, School of Public Health, University College Cork.
 
 ## Table of contents
 
-- [Public landing page](#public-landing-page)
+- [GitHub Pages](#github-pages)
 - [What this is](#what-this-is)
 - [Before you start](#before-you-start)
 - [Quick start](#quick-start)
+- [Accounts and sign-in](#accounts-and-sign-in)
 - [All commands](#all-commands)
 - [Everyday recipes](#everyday-recipes)
 - [Repository structure](#repository-structure)
 - [What each directory is for](#what-each-directory-is-for)
 - [How it works](#how-it-works)
 - [The API](#the-api)
-- [The dashboard](#the-dashboard)
+- [The application](#the-application)
 - [Loading real GBD data](#loading-real-gbd-data)
 - [Testing and code quality](#testing-and-code-quality)
 - [Deployment](#deployment)
@@ -45,35 +46,52 @@ Senior Lecturer, School of Public Health, University College Cork.
 
 ---
 
-## Public landing page
+## GitHub Pages
 
 **<https://abdulrazakucc.github.io/ireland-gbd-dashboard/>**
 
-GitHub Pages hosts the **public landing page only**: what the application is
-for, what it provides, and how access works. It republishes automatically on
-every push to `main`.
+GitHub Pages republishes on every push to `main`. A static site cannot check who
+is asking — every file there can be downloaded by anyone — so it publishes one
+of two shapes:
 
-**No results are published there.** GBD results are available only to
-approved users of the application, and a static site cannot check who is
-asking — every file on GitHub Pages can be downloaded by anyone. So
-`scripts/build_static_site.py` publishes `static/landing.html` and the two
-images it shows, and refuses to write anything else; the Pages workflow checks
-the output again before deploying, and `tests/test_static_site.py` holds the
-build to it.
+| Repository secret `GBD_USERS_JSON` | What is published |
+|---|---|
+| Not set | The public **landing page** only |
+| Set | The landing page **and the application**, with every result **encrypted** |
 
-The landing page's call to action exists in two versions. Until the secure
-application is hosted, it says that access opens when the application
-launches. Once it is, set the repository variable **`GBD_APP_URL`**
-(Settings → Secrets and variables → Actions → Variables) to its address, and
-the page's **Request access** and **Sign in** buttons point there.
+With accounts, `scripts/build_static_site.py` collects every response the
+application can show, encrypts them with AES-256-GCM under a new key on every
+build, and wraps that key for each account with the account's password hash.
+Signing in on the published page re-derives that hash **in the browser** and
+decrypts the results there: no server is involved, and nothing is readable
+without a valid email and password. No email address, name or password hash is
+published.
 
-Preview it exactly as Pages will serve it:
+**To let someone sign in to the published copy** — for example for a presentation:
 
 ```bash
-make site-serve          # builds, then serves on http://127.0.0.1:8001
+make user-add EMAIL=someone@example.org NAME="Their Name"   # asks for the password
+make user-export                                            # prints the accounts file
 ```
 
-To use the dashboard itself, run the application — see [Quick start](#quick-start).
+Paste that output into **Settings → Secrets and variables → Actions → New
+repository secret**, name it `GBD_USERS_JSON`, and re-run the *Deploy site to
+GitHub Pages* workflow. To remove access, run `make user-remove`, update the
+secret and re-run: the next copy uses a new key the removed account cannot open.
+
+**Limits of the published copy** — read these before relying on it:
+
+- Anyone can download the encrypted files and try passwords offline. Use a long,
+  unique password for these accounts (12 characters is the minimum, not a target).
+- Removing an account protects the copies built afterwards, not earlier ones.
+- It suits a handful of named accounts. For many users, run the application on
+  a server: same sign-in screen, same accounts, no offline guessing.
+
+Preview exactly what Pages will serve:
+
+```bash
+make site-serve     # sealed for data/access/users.json if it exists; serves on :8001
+```
 
 ## What this is
 
@@ -208,13 +226,48 @@ Either way, **one process serves everything on one port**:
 
 | | |
 |---|---|
-| **Dashboard** | <http://127.0.0.1:8000> |
-| **JSON API** | <http://127.0.0.1:8000/api/...> |
+| **Website** | <http://127.0.0.1:8000> |
+| **Application** | <http://127.0.0.1:8000/app/> — sign in here |
+| **JSON API** | <http://127.0.0.1:8000/api/...> — for signed-in users |
+
+**Before you sign in the first time, create your account:**
+
+```bash
+make user-add EMAIL=you@example.org NAME="Your Name"
+```
+
+Without `make` (for example on Windows): `python -m app.accounts add you@example.org`.
+In Docker: `docker compose exec app python -m app.accounts add you@example.org`.
 
 There is no separate frontend server and no HTML file to open by hand. Confirm
 everything is working with `make smoke`.
 
 To stop: `make down` (Docker) or `make stop` (local).
+
+## Accounts and sign-in
+
+Everything that shows results requires signing in — on a laptop, on a server and
+on the GitHub Pages copy — through the same screen, with the same accounts.
+
+```bash
+make user-add EMAIL=someone@example.org NAME="Their Name"   # create, or set a new password
+make user-list                                              # who can sign in
+make user-remove EMAIL=someone@example.org                  # revoke, immediately
+```
+
+The password is typed at a hidden prompt and never stored:
+`data/access/users.json` keeps a salted PBKDF2-HMAC-SHA256 hash (600,000
+iterations), is git-ignored, never copied into an image, and readable only by
+its owner. A session is a signed, expiring cookie that page scripts cannot
+read; removing an account or changing its password ends its sessions at once,
+and repeated failed sign-ins are slowed down. See [SECURITY.md](SECURITY.md).
+
+**Growing to thousands of users.** The password format, the sign-in screen and
+the session design carry over unchanged. The next steps are moving accounts
+from the file into a database with access requests and an approval queue, and
+moving the sign-in rate limit to a shared store so several server processes can
+enforce it together. Single sign-on through UCC's identity provider is already
+possible: set `GBD_AUTH_MODE=proxy` behind an identity-aware reverse proxy.
 
 ## All commands
 
@@ -249,7 +302,7 @@ not there.
 | `make stop` | Stop it |
 | `make restart` | Stop, then start |
 | `make status` | Show what is listening on the port |
-| `make open` | Open the dashboard in a browser |
+| `make open` | Open the application in a browser |
 | `make logs` | Follow the app log |
 
 ### Running the app in Docker
@@ -281,13 +334,24 @@ not there.
 | `make clean` | Remove the database, logs, and caches (keeps `.venv`) |
 | `make distclean` | Also remove `.venv` |
 
+### Accounts
+
+| Command | What it does |
+|---|---|
+| `make user-add EMAIL=…` | Create an account, or set a new password (hidden prompt) |
+| `make user-list` | List who can sign in |
+| `make user-remove EMAIL=…` | Remove an account; its sessions end at once |
+| `make user-export` | Print the accounts file, for the `GBD_USERS_JSON` GitHub secret |
+
 ## Everyday recipes
 
 Find what you want to do, then run the command beside it.
 
 | I want to… | Command |
 |---|---|
-| Run it for the very first time | `make dev` |
+| Run it for the very first time | `make dev`, then `make user-add EMAIL=…` |
+| Let someone sign in | `make user-add EMAIL=…` |
+| Give someone access to the GitHub Pages copy | `make user-add`, then update the secret with `make user-export` |
 | Start it again tomorrow | `make start` |
 | Stop it | `make stop` |
 | See it in my browser | `make open` |
@@ -295,7 +359,7 @@ Find what you want to do, then run the command beside it.
 | Check whether it is actually working | `make smoke` |
 | See what the app is doing right now | `make logs` *(press `Ctrl+C` to stop watching)* |
 | Find out why it will not start | `make doctor`, then `make status` |
-| Pick up my changes to `index.html` | Just refresh the browser — no restart needed |
+| Pick up my changes to the frontend | Just refresh the browser — no restart needed |
 | Pick up my changes to Python code | `make restart` |
 | Load a new GBD export | Put the CSV in `data/incoming/`, then `make refresh` |
 | Rebuild the database from scratch | `make reseed` |
@@ -327,16 +391,18 @@ make stop          # finished for now
 ```text
 ireland-gbd-dashboard/
 │
-├── app/                          The web application (API + serves the dashboard)
+├── app/                          The web application (API, sign-in, serves the site)
 │   ├── __init__.py
 │   ├── config.py                 Every path and setting, resolved once
+│   ├── accounts.py               Accounts: password hashing, users file, CLI
+│   ├── auth.py                   Sign-in: sessions, rate limiting, /api/auth routes
 │   ├── db.py                     The database schema, and SQLite access
 │   ├── queries.py                Every read, shared by the API, figures and import checks
 │   ├── gbd.py                    GBD rules: units, display scaling, citation
 │   ├── figures.py                PNG and PDF figures, with GBD context drawn on
 │   ├── schemas.py                Response models: the API's contract
 │   ├── routes.py                 The /api routes
-│   └── main.py                   App factory; mounts the dashboard at /
+│   └── main.py                   App factory: security headers, sign-in guard, serves static/
 │
 ├── etl/                          Getting data INTO the database
 │   ├── __init__.py
@@ -347,14 +413,19 @@ ireland-gbd-dashboard/
 │   ├── gbd_seed.csv              Prototype seed data, in GBD Results Tool format
 │   ├── gbd.db                    SQLite database — BUILT, not committed
 │   ├── gbd.db.previous           The database the last import replaced — not committed
+│   ├── access/                   Accounts (users.json) — never committed
 │   └── incoming/                 Drop new GBD Results Tool exports here
 │
-├── site/                         The public landing page for Pages — BUILT, not committed
+├── site/                         The GitHub Pages site — BUILT, not committed
 │
-├── static/                       The frontend, served at /
-│   ├── landing.html              Public landing page: purpose and how access works
-│   ├── index.html                The whole dashboard: one file, no build step
-│   ├── config.js                 Where the dashboard finds its API
+├── static/                       The frontend — no build step
+│   ├── index.html                Public landing page, served at /
+│   ├── app/                      The application, served at /app/
+│   │   ├── index.html            Application shell (no inline scripts)
+│   │   ├── app.css               Design system: layout, components, themes
+│   │   ├── config.js             "server" locally; "sealed" in the Pages copy
+│   │   └── js/                   Modules: main, api, sealed, charts, login, present
+│   │       └── views/            One module per view: overview, trends, rankings, methods
 │   └── assets/
 │       ├── ucc-logo.png          Cropped, web-sized UCC logo
 │       ├── zubair-kabir.png      Principal investigator photograph
@@ -363,14 +434,15 @@ ireland-gbd-dashboard/
 ├── tests/                        Test suite (pytest)
 │   ├── conftest.py               Fixtures: seed and synthetic multidimensional databases
 │   ├── test_api.py               Every endpoint's contract, CORS, database errors
+│   ├── test_auth.py              Accounts, sessions, what signed-out visitors can reach
 │   ├── test_api_filters.py       Filters on every dimension, rankings, CSV export
 │   ├── test_figures.py           PNG and PDF exports and the context they carry
 │   ├── test_import.py            Dimensions kept apart, intervals, duplicates, rollback
 │   ├── test_etl.py               The seed loads through the real importer
-│   └── test_static_site.py       The public site holds the landing page and nothing else
+│   └── test_static_site.py       GitHub Pages: landing only, or a copy only credentials open
 │
 ├── scripts/
-│   ├── build_static_site.py      Builds the public landing page for GitHub Pages
+│   ├── build_static_site.py      Builds the GitHub Pages site, sealing results for accounts
 │   ├── refresh.sh                Safe re-import of a new export (cron-friendly)
 │   └── install.ps1               One-command Windows setup, no admin rights
 │
@@ -383,7 +455,7 @@ ireland-gbd-dashboard/
 │
 ├── .github/workflows/
 │   ├── ci.yml                    Lint, test, and a real container build
-│   └── pages.yml                 Builds and publishes the dashboard to Pages
+│   └── pages.yml                 Builds and publishes the site to GitHub Pages
 │
 ├── Install.cmd                   Windows one-click setup (double-click it)
 ├── Makefile                      Every command for this project
@@ -395,6 +467,7 @@ ireland-gbd-dashboard/
 ├── .env.example                  Optional settings; copy to .env (never committed)
 ├── .gitignore                    Build artefacts, licensed data and secrets stay out
 ├── .dockerignore                 Keeps the image small and clean
+├── SECURITY.md                   Security and privacy policy
 └── README.md                     This file
 ```
 
@@ -407,6 +480,8 @@ port. The package is split by responsibility so each file has one job:
 
 | File | Responsibility |
 |---|---|
+| `accounts.py` | Who may sign in: the users file, PBKDF2 password hashing, and the `add` / `remove` / `list` commands. |
+| `auth.py` | Signing in: signed session cookies re-checked on every request, the sign-in rate limit, and the `/api/auth` routes. |
 | `config.py` | The single source of truth for **where things are**. Nothing else in the codebase works out a path by walking `__file__`. Every path can be overridden with an environment variable, which is how Docker and the tests point the app elsewhere without editing code. |
 | `db.py` | The database schema and its version, and opening connections. The importer that writes the format and the API that reads it share this one definition. |
 | `queries.py` | Every read the application makes. The routes, the figure renderer and the importer's verification step all call these, so a selection has exactly one answer wherever it is asked. |
@@ -414,7 +489,7 @@ port. The package is split by responsibility so each file has one job:
 | `figures.py` | Renders one series as a PNG or PDF with its release, every dimension, uncertainty, forecast disclosure, IHME citation, de-identified provenance and import date. Uses matplotlib's object API, never `pyplot`, which is not thread-safe. |
 | `schemas.py` | Pydantic models describing every response. They define the API's contract, give the frontend a contract, and make a shape change fail loudly in tests. |
 | `routes.py` | The `/api` endpoints. Thin: each one is a query from `queries.py` plus HTTP error handling. |
-| `main.py` | Builds the application — middleware, routes, and the static mount. |
+| `main.py` | Builds the application — security headers, the sign-in guard in front of `/api`, routes, and the static mount. |
 
 **One ordering rule matters here.** The dashboard is mounted at `/`, which is a
 catch-all. FastAPI matches routes in declaration order, so the `/api` router is
@@ -451,10 +526,19 @@ Three things are **not** committed:
 
 ### `static/` — the frontend
 
-One self-contained `index.html`. No build step, no `npm install`, no bundler:
-open it and it works. Chart.js is **vendored** into `assets/` rather than
-loaded from a CDN, so the dashboard works on a restricted or air-gapped
-network and cannot break because someone else's CDN changed.
+Two parts, and still no build step, no `npm install` and no bundler:
+
+- `index.html` — the public landing page.
+- `app/` — the application: a small shell page, one stylesheet, and plain
+  JavaScript modules. `js/main.js` registers the views; adding an analysis means
+  writing one module in `js/views/` and listing it there. `js/api.js` gives every
+  view the same data interface, whether results come from the server or from the
+  sealed copy on GitHub Pages.
+
+Chart.js is **vendored** into `assets/` rather than loaded from a CDN, so the
+application works on a restricted or air-gapped network, and every script is a
+file served by the site itself, so the Content-Security-Policy permits no inline
+or third-party scripts.
 
 ### `tests/` — the safety net
 
@@ -473,10 +557,12 @@ old-format copy of the seed, but refuses to replace a real import — needed
 because the database lives in the mounted volume, which would otherwise hide a
 copy baked in at build time.
 
-`scripts/build_static_site.py` builds the [public landing page](#public-landing-page)
-for GitHub Pages. It publishes the landing page and its images and refuses to
-write anything else, because results are for approved users and every file on
-GitHub Pages is public.
+`scripts/build_static_site.py` builds the [GitHub Pages site](#github-pages).
+Without accounts it publishes the landing page and its images; with accounts it
+adds the application and every result it can show, encrypted so that only those
+accounts can open them. Either way it writes only allow-listed files and refuses
+to publish if any readable result, email address or name would leave the
+ciphertext, because every file on GitHub Pages is public.
 
 `scripts/install.ps1` is the one-command Windows installer described in
 [INSTALL_WINDOWS.md](INSTALL_WINDOWS.md), and `Install.cmd` at the repository
@@ -609,37 +695,37 @@ clinical predictions or replacements for an epidemiological model.
 `curl` do not use CORS. If a separate web app must call the API from a browser,
 list its origin in `GBD_CORS_ORIGINS` — never `*`.
 
-## The dashboard
+## The application
 
-- **UCC identity** — logo and a map of the Ireland launch dataset with Cork marked
-  on the left; principal investigator, linked to their UCC research profile, on
-  the right.
-- **Hero figure and stat tiles** — life expectancy leads; healthy life
-  expectancy, tobacco, BMI, and air pollution follow with sparklines and
-  change-since-baseline, all computed from live API responses. They find their
-  series by name, so they survive a new export; a tile whose series is not in
-  the dataset is left out.
-- **Filters on every dimension** — the trend card filters by measure, cause,
-  risk, metric, age, sex and year range; the ranking card by measure, metric,
-  age, sex and year. Every option comes from the database, and each select only
-  offers values that still lead to real data, so no combination is a dead end.
-- **Uncertainty intervals** — the trend chart draws the 95% interval as a band
-  wherever the source provides one; tooltips and table views give the bounds.
-- **Forecast controls on both analyses** — trends and rankings each offer an
-  explicit forecast switch and 3-, 5- or 10-year horizon. Dashed lines,
-  prediction intervals, table labels and method notes prevent projections from
-  being mistaken for observed estimates.
-- **Downloads** — CSV, PNG and PDF of exactly the current selection, year range
-  included. Figures carry the release, every dimension, the IHME citation, the
-  de-identified source label and the import date. Figures of the prototype seed data say, on
-  the figure, not to cite them.
-- **Provenance without disclosure** — the release, last update, row count and
-  non-identifying source label sit above the charts; original filenames, paths,
-  sizes and hashes stay internal to the database.
-- **Light and dark themes** — follows the operating system by default, with a
-  toggle that remembers your choice.
-- **A table view on every chart** — the same data as an accessible table, so no
-  value is reachable only by hovering.
+A single-page application with a sidebar of views. On a laptop or desktop, each
+view fits the screen: readers click between views instead of scrolling.
+
+- **Sign-in** — the same screen locally, on a server and on GitHub Pages.
+- **Overview** — life expectancy leads, with its trend and exploratory outlook;
+  healthy life expectancy, tobacco, BMI and air pollution follow with
+  sparklines; highlights and the leading causes complete the picture. Every card
+  opens the detailed view on exactly what it summarises.
+- **Trends** — one series at a time, chosen by measure, cause, risk, metric,
+  age, sex and year range. Choices only offer combinations that exist, so none
+  is a dead end. The 95% uncertainty interval is drawn as a band; an optional 3-,
+  5- or 10-year exploratory forecast is dashed, with its prediction interval and
+  method stated beside it.
+- **Rankings** — the leading causes or risk factors for a population and year,
+  with the top three and an optional projection.
+- **Methods & data** — the IHME citation with a copy button, the dataset's
+  provenance, and how to read uncertainty intervals and forecasts.
+- **Present** — full-screen slides built from the loaded data: title, life
+  expectancy, headline indicators, leading causes and risks, the trend last
+  selected, and sources. Arrow keys move between slides, `F` toggles full
+  screen, `Esc` closes, and `P` opens it from any view.
+- **Downloads** — CSV, PNG and PDF of exactly the current selection. Figures
+  carry the release, every dimension, the IHME citation and the import date, and
+  mark prototype data as not for citation. The GitHub Pages copy offers CSV and
+  PNG, generated in the browser.
+- **Shareable views** — the address records the view and selection, so a link
+  reopens the same chart after signing in.
+- **Light and dark themes**, and a **table view** on every chart, so no value is
+  reachable only by hovering.
 
 **On the chart colours.** The series palette is not hand-picked. It uses
 validated categorical slots, checked in both themes for lightness band, chroma
@@ -728,13 +814,13 @@ make check     # lint + tests + dependency audit, the same checks CI runs
 
 There are two deployments, and they serve different purposes.
 
-### The public landing page (GitHub Pages)
+### GitHub Pages
 
-**<https://abdulrazakucc.github.io/ireland-gbd-dashboard/>** — the introduction
-to the application and how to request access. It holds no results, so it
-needs no server and nothing to keep up. Pushing to `main` runs
-`.github/workflows/pages.yml`, which runs the tests, builds the landing page,
-refuses to publish anything else, and deploys it.
+**<https://abdulrazakucc.github.io/ireland-gbd-dashboard/>** — the landing page
+and, when the `GBD_USERS_JSON` secret is set, the sealed application for the
+accounts in it (see [GitHub Pages](#github-pages)). It needs no server. Pushing to
+`main` runs `.github/workflows/pages.yml`, which runs the tests, builds the site,
+refuses to publish anything readable beyond the landing page, and deploys it.
 
 One-time setup, already done: **Settings → Pages → Source: GitHub Actions**.
 
@@ -752,8 +838,11 @@ The container runs as a **non-root user** and declares a **healthcheck**, so an
 orchestrator can tell readiness from "the process started".
 
 Production access is fail-closed. With `GBD_ENV=production`, startup is refused
-unless `GBD_AUTH_MODE=proxy` and a proxy secret is configured—preferably through
-the mounted file named by `GBD_PROXY_SECRET_FILE`. An
+unless sign-in is enforced: either `GBD_AUTH_MODE=password` with a session secret
+of at least 32 characters (preferably the mounted file named by
+`GBD_SESSION_SECRET_FILE`), or `GBD_AUTH_MODE=proxy` with a proxy secret
+(preferably through `GBD_PROXY_SECRET_FILE`). Serve password sign-in over HTTPS;
+its cookies are marked `Secure` in production. For proxy mode, an
 identity-aware reverse proxy must remove inbound authentication headers,
 authenticate the approved user, then set `X-Forwarded-User` and
 `X-GBD-Proxy-Secret` on the private upstream request. Keep the app port private
@@ -780,7 +869,11 @@ below is required to run the project.
 | `GBD_CORS_ORIGINS` | *(none)* | Comma-separated browser origins allowed to call the API from another site |
 | `GBD_ENV` | `development` | Set `production` to enable fail-closed deployment checks and HSTS |
 | `GBD_TRUSTED_HOSTS` | localhost/test hosts | Allowed HTTP Host values |
-| `GBD_AUTH_MODE` | `off` | Set `proxy` for production identity-aware proxy authentication |
+| `GBD_AUTH_MODE` | `password` | `password` (accounts file), `proxy` (identity-aware reverse proxy) or `off` (automated tests only; refused in production) |
+| `GBD_USERS_FILE` | `<GBD_DATA_DIR>/access/users.json` | Accounts for password sign-in |
+| `GBD_SESSION_SECRET_FILE` | *(none)* | Preferred mounted file holding the session-signing secret; required in production for password sign-in |
+| `GBD_SESSION_SECRET` | *(none)* | Fallback; 32+ unpredictable characters. Without either in development, sessions end when the app restarts |
+| `GBD_SESSION_HOURS` | `12` | How long a sign-in lasts |
 | `GBD_PROXY_SECRET_FILE` | *(none)* | Preferred mounted file containing the proxy-to-app secret |
 | `GBD_PROXY_SECRET` | *(none)* | Non-container fallback; must be 32+ unpredictable characters, while a file avoids process/container inspection |
 | `GBD_AUTH_USER_HEADER` | `X-Forwarded-User` | Authenticated identity header set by the trusted proxy |
@@ -796,8 +889,19 @@ read it; `.env` is git-ignored and never copied into the image.
 PID from `lsof` while Docker is running fights the Docker proxy rather than
 stopping the container.
 
-**The dashboard says the API is unreachable** — the app is not running. Start
-it with `make run` or `make up`, then confirm with `make smoke`.
+**The application says the server is unreachable** — the app is not running.
+Start it with `make run` or `make up`, then confirm with `make smoke`.
+
+**"No accounts exist yet" when signing in** — create one:
+`make user-add EMAIL=you@example.org` (or `python -m app.accounts add you@example.org`).
+
+**"Too many attempts"** — sign-in pauses for that account or computer after
+repeated failures. Wait fifteen minutes, or restart the app.
+
+**The GitHub Pages copy says the email or password is incorrect** — the copy is
+sealed for the accounts in the `GBD_USERS_JSON` secret when it was built. After
+`make user-add`, update the secret with `make user-export` and re-run the
+Pages workflow.
 
 **A `503` mentioning the database** — either none has been built (`make seed`),
 or it was built by an older version of this project (`make reseed` for seed

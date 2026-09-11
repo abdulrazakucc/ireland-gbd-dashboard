@@ -205,6 +205,12 @@ class TestDashboard:
         for asset in ("assets/ucc-logo.png", "assets/zubair-kabir.png", "assets/chart.umd.js"):
             assert client.get(f"/{asset}").status_code == 200, asset
 
+    def test_the_application_shell_is_served_at_app(self, client: TestClient) -> None:
+        response = client.get("/app/")
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("text/html")
+        assert 'src="js/main.js"' in response.text and "Global Health Evidence" in response.text
+
     def test_api_routes_win_over_the_static_catch_all(self, client: TestClient) -> None:
         """The static mount is at '/', so this ordering must not regress."""
         assert client.get("/api/health").json() == {"status": "ok"}

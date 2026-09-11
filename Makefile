@@ -93,7 +93,8 @@ start: run ## Alias for `make run`
 
 urls: ## Print the addresses the app serves on
 	@echo ""
-	@echo "    Dashboard  $(APP_URL)"
+	@echo "    Website    $(APP_URL)"
+	@echo "    App        $(APP_URL)/app/      (sign in here)"
 	@echo "    JSON API   $(APP_URL)/api"
 	@echo ""
 
@@ -163,7 +164,8 @@ run: seed ## Start the app in the background
 	@$(MAKE) --no-print-directory wait-api \
 		|| { echo "!! App did not start -- see $(RUN_DIR)/app.log"; exit 1; }
 	@echo ""
-	@echo "    Dashboard  $(APP_URL)"
+	@echo "    Website    $(APP_URL)"
+	@echo "    App        $(APP_URL)/app/      (sign in here)"
 	@echo "    API        $(APP_URL)/api"
 	@echo ""
 	@echo "    make logs    follow output      make stop    shut down"
@@ -186,8 +188,8 @@ status: ## Show what is listening on the port
 	@echo "==> Containers"
 	@docker compose ps 2>/dev/null || echo "    (docker unavailable)"
 
-open: ## Open the dashboard in a browser
-	@open $(APP_URL) 2>/dev/null || echo "Open $(APP_URL)"
+open: ## Open the application in a browser
+	@open $(APP_URL)/app/ 2>/dev/null || echo "Open $(APP_URL)/app/"
 
 logs: ## Follow the local app log
 	@tail -f $(RUN_DIR)/app.log
@@ -199,7 +201,8 @@ up: ## Build and start the container
 	@$(MAKE) --no-print-directory wait-api \
 		|| { echo "!! App did not start -- try: make docker-logs"; exit 1; }
 	@echo ""
-	@echo "    Dashboard  $(APP_URL)"
+	@echo "    Website    $(APP_URL)"
+	@echo "    App        $(APP_URL)/app/      (sign in here)"
 	@echo "    API        $(APP_URL)/api"
 	@echo ""
 
@@ -276,11 +279,12 @@ check: lint test audit ## Run lint, tests and security audit -- what CI runs
 
 ## ----------------------------------------------------------- publish ----
 
-site: setup ## Build the public landing page published to GitHub Pages
-	@$(PY) -m scripts.build_static_site --out $(SITE_DIR)
+site: setup-dev seed ## Build the GitHub Pages site (sealed for data/access accounts, if any)
+	@$(PY) -m scripts.build_static_site --out $(SITE_DIR) \
+		$(if $(wildcard data/access/users.json),--users-file data/access/users.json,)
 	@echo "==> Preview it with: make site-serve"
 
-site-serve: site ## Build the landing page and serve it exactly as Pages will
+site-serve: site ## Build the site and serve it exactly as Pages will
 	@echo "==> Landing page on http://127.0.0.1:$(SITE_PORT)/  (Ctrl-C to stop)"
 	@cd $(SITE_DIR) && $(realpath $(PY)) -m http.server $(SITE_PORT)
 

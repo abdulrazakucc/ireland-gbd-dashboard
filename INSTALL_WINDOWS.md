@@ -167,12 +167,27 @@ It sits at the top level of the unzipped folder, next to `README.md`.
 
 <div align="center">
 
-### 4. There is no step 4. ☕
+### 4. Create your account 🔑
 
 </div>
 
-Wait about 5 minutes. When it finishes, your browser opens on the dashboard by
-itself.
+Wait about 5 minutes. When it finishes, your browser opens on the website by
+itself. Results are shown only to people who sign in, so create your account
+once. In the project folder, click the address bar, type `powershell`, press
+**Enter**, and run:
+
+```powershell
+.\.venv\Scripts\python.exe -m app.accounts add you@example.org --name "Your Name"
+```
+
+If the installer used **Docker**, run this instead:
+
+```powershell
+docker compose exec app python -m app.accounts add you@example.org --name "Your Name"
+```
+
+It asks for a password (at least 12 characters) twice; **nothing appears while
+you type** — that is normal. Then click **Sign in** in the browser.
 
 ---
 
@@ -540,6 +555,25 @@ then the location of the database it just built
 > it is built on your machine from the CSV file in `data\`. Without it the
 > dashboard will start but say that its database is not ready.
 
+**6f — Create your account:**
+
+Results are shown only to people who sign in, so create an account for
+yourself (use your own email address):
+
+```powershell
+python -m app.accounts add you@example.org --name "Your Name"
+```
+
+It asks for a password twice. **Nothing appears while you type** — that is
+normal. Use at least 12 characters.
+
+✅ Prints `Saved you@example.org to …\data\access\users.json`.
+
+> [!TIP]
+> Run the same command again with another email address to let a colleague
+> sign in, or with your own address to choose a new password.
+> `python -m app.accounts list` shows who can sign in.
+
 ---
 
 ### Step 7 — Start the dashboard 🚀
@@ -564,6 +598,8 @@ INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 # [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
 </div>
+
+Click **Sign in** and use the email address and password from step 6f.
 
 > [!WARNING]
 >
@@ -676,6 +712,13 @@ make dev
 components, builds the database, starts the dashboard, and opens your browser
 at **<http://127.0.0.1:8000>**. It takes about a minute the first time.
 
+Then create your account, so you can sign in (it asks for a password, which
+stays hidden while you type):
+
+```bash
+make user-add EMAIL=you@example.org NAME="Your Name"
+```
+
 When you are finished:
 
 ```bash
@@ -703,10 +746,11 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 python etl/load_seed.py
+python -m app.accounts add you@example.org --name "Your Name"
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-Then open **<http://127.0.0.1:8000>** and stop it with **`Ctrl + C`**.
+Then open **<http://127.0.0.1:8000>**, click **Sign in**, and stop it with **`Ctrl + C`**.
 
 </details>
 

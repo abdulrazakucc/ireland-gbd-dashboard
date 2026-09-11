@@ -185,7 +185,10 @@ def login(credentials: Credentials, request: Request, response: Response) -> dic
         limiter.failed(account, client)
         detail = "Email or password is incorrect."
         if config.ENVIRONMENT != "production" and not accounts.load_users():
-            detail = "No accounts exist yet. Create one with: make user-add EMAIL=you@example.org"
+            detail = (
+                "No accounts exist yet. Create one with: make user-add EMAIL=you@example.org"
+                " (or: python -m app.accounts add you@example.org)"
+            )
         raise HTTPException(status_code=401, detail=detail)
 
     limiter.succeeded(account)

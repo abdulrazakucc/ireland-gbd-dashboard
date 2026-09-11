@@ -4,9 +4,10 @@ Global Health Evidence -- UCC School of Public Health.
 The application entry point. One process serves both halves of the product on
 a single port:
 
-* ``/``          the dashboard (the files in ``static/``)
-* ``/api/...``   the JSON API   (the routes in ``app/routes.py``)
-* ``/docs``      interactive API documentation, generated from the code
+* ``/``          the public landing page (``static/index.html``)
+* ``/app/``      the application: sign-in and the analysis workspace (``static/app/``)
+* ``/api/...``   the JSON API (``app/routes.py``), for signed-in users only
+* ``/docs``      interactive API documentation, only with ``GBD_EXPOSE_DOCS=true``
 
 Run it:
 

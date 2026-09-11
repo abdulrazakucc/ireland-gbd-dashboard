@@ -59,6 +59,50 @@ KEY_DIMS = (*SERIES_DIMS, "year")
 MAX_REPORTED = 20  # problems listed in an error; the total is always given
 BATCH = 5000
 
+# Aggregate GBD exports never need person-level or credential fields. Reject
+# them even though the importer would otherwise ignore extra columns: a file
+# with identifiable research data must not enter this pipeline accidentally.
+SENSITIVE_HEADERS = {
+    "pid",
+    "patient_id",
+    "patientid",
+    "person_id",
+    "personid",
+    "participant_id",
+    "participantid",
+    "subject_id",
+    "subjectid",
+    "individual_id",
+    "individualid",
+    "first_name",
+    "firstname",
+    "last_name",
+    "lastname",
+    "full_name",
+    "fullname",
+    "medical_record_number",
+    "mrn",
+    "date_of_birth",
+    "dob",
+    "date_of_death",
+    "email",
+    "email_address",
+    "phone",
+    "phone_number",
+    "street_address",
+    "postal_address",
+    "ip_address",
+    "social_security_number",
+    "ssn",
+    "pps_number",
+    "ppsn",
+    "nhs_number",
+    "api_key",
+    "access_token",
+    "password",
+    "secret",
+}
+
 
 class GBDImportError(Exception):
     """The import was refused. The active database was not touched."""
@@ -140,6 +184,13 @@ def _resolve_columns(header: Sequence[str], name: str) -> tuple[dict[str, str], 
     present = {h.strip() for h in header}
     columns: dict[str, str] = {}
     problems: list[str] = []
+    normalized = {re.sub(r"[^a-z0-9]+", "_", h.lower()).strip("_") for h in present}
+    sensitive = sorted(normalized & SENSITIVE_HEADERS)
+    if sensitive:
+        problems.append(
+            f"{name}: contains prohibited person-level or credential column(s): "
+            f"{', '.join(sensitive)}. This pipeline accepts aggregate GBD data only."
+        )
     for dim, aliases in COLUMN_ALIASES.items():
         found = [a for a in aliases if a in present]
         if len(found) > 1:

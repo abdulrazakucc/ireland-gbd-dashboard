@@ -24,6 +24,12 @@ Environment variables (all optional -- see ``.env.example``):
                         Default: ``GBD 2023``
 ``GBD_CORS_ORIGINS``    Comma-separated origins allowed to call the API from
                         a browser on another site. Default: none.
+``GBD_ENV``             ``development`` (default) or ``production``.
+``GBD_TRUSTED_HOSTS``   Comma-separated HTTP Host values. Default: localhost.
+``GBD_AUTH_MODE``       ``off`` locally or ``proxy`` behind an identity-aware
+                        reverse proxy. Production requires ``proxy``.
+``GBD_PROXY_SECRET``    Secret supplied by that proxy on every protected call.
+``GBD_PROXY_SECRET_FILE`` Preferred mounted file containing that secret.
 ======================  ======================================================
 """
 
@@ -47,6 +53,17 @@ def _list_from_env(var: str) -> list[str]:
     return [item.strip() for item in os.environ.get(var, "").split(",") if item.strip()]
 
 
+def _secret(var: str, file_var: str) -> str:
+    """Read a secret from a mounted file, falling back to an environment variable."""
+    secret_file = os.environ.get(file_var, "").strip()
+    if secret_file:
+        try:
+            return Path(secret_file).read_text(encoding="utf-8").strip()
+        except OSError as exc:
+            raise RuntimeError(f"Could not read the secret configured by {file_var}") from exc
+    return os.environ.get(var, "").strip()
+
+
 DATA_DIR: Path = _dir_from_env("GBD_DATA_DIR", ROOT_DIR / "data")
 DB_PATH: Path = _dir_from_env("GBD_DB_PATH", DATA_DIR / "gbd.db")
 STATIC_DIR: Path = _dir_from_env("GBD_STATIC_DIR", ROOT_DIR / "static")
@@ -66,3 +83,16 @@ GBD_ROUND: str = os.environ.get("GBD_ROUND", "GBD 2023")
 # dashboard is served from the same origin as the API and needs no CORS, and
 # notebooks, R and curl are not browsers, so CORS never applies to them.
 CORS_ORIGINS: list[str] = _list_from_env("GBD_CORS_ORIGINS")
+
+ENVIRONMENT: str = os.environ.get("GBD_ENV", "development").strip().lower()
+TRUSTED_HOSTS: list[str] = _list_from_env("GBD_TRUSTED_HOSTS") or [
+    "127.0.0.1",
+    "localhost",
+    "testserver",
+]
+AUTH_MODE: str = os.environ.get("GBD_AUTH_MODE", "off").strip().lower()
+AUTH_USER_HEADER: str = os.environ.get("GBD_AUTH_USER_HEADER", "X-Forwarded-User").strip()
+PROXY_SECRET: str = _secret("GBD_PROXY_SECRET", "GBD_PROXY_SECRET_FILE")
+EXPOSE_DOCS: bool = os.environ.get(
+    "GBD_EXPOSE_DOCS", "false" if ENVIRONMENT == "production" else "true"
+).strip().lower() in {"1", "true", "yes", "on"}

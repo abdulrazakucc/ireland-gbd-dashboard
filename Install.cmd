@@ -1,6 +1,6 @@
 @echo off
 rem ---------------------------------------------------------------------------
-rem  Ireland Health Evidence -- one-click setup for Windows.
+rem  Global Health Evidence -- one-click setup for Windows.
 rem
 rem  Double-click this file. It needs no administrator rights.
 rem
@@ -9,7 +9,7 @@ rem  type anything: -ExecutionPolicy Bypass is scoped to this one child process,
 rem  so it changes no machine setting and needs no elevation.
 rem ---------------------------------------------------------------------------
 
-title Ireland Health Evidence - Setup
+title Global Health Evidence - Setup
 cd /d "%~dp0"
 
 if not exist "%~dp0scripts\install.ps1" (

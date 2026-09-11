@@ -87,7 +87,9 @@ def _read(fn: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
         ) from exc
 
 
-def _series_or_404(db: Path, series: str | None, filters: Filters) -> dict[str, Any]:
+def _series_or_404(
+    db: Path, series: str | None, filters: Filters, forecast_years: int = 0
+) -> dict[str, Any]:
     """The series named by id, or by a dimension selection that identifies exactly one."""
     if series is None:
         series = _read(
@@ -95,7 +97,9 @@ def _series_or_404(db: Path, series: str | None, filters: Filters) -> dict[str, 
             db,
             Filters(**{**filters.__dict__, "year_from": None, "year_to": None}),
         )
-    data = series and _read(queries.fetch_series, db, series, filters.year_from, filters.year_to)
+    data = series and _read(
+        queries.fetch_series, db, series, filters.year_from, filters.year_to, forecast_years
+    )
     if not data:
         raise HTTPException(status_code=404, detail="No estimates for that series and year range")
     return data
@@ -113,7 +117,7 @@ def health() -> dict:
 
 @router.get("/meta", response_model=Meta, summary="Dataset provenance")
 def meta(db: DbPath) -> dict:
-    """The GBD release, import date, source files with checksums, and citation."""
+    """The GBD release, import date, de-identified provenance, and citation."""
     return _read(queries.fetch_meta, db)
 
 
@@ -142,13 +146,18 @@ def estimates(
 
 
 @router.get("/trend", response_model=Trend, summary="One series over time")
-def trend(db: DbPath, filters: Selection, series: SeriesParam = None) -> dict:
+def trend(
+    db: DbPath,
+    filters: Selection,
+    series: SeriesParam = None,
+    forecast_years: int = Query(0, ge=0, le=10, description="Years to project; 0 disables"),
+) -> dict:
     """A series by ``series`` id, or by dimension filters that identify exactly one.
 
     Returns 409, listing the dimensions that still vary, when the filters match
     several series.
     """
-    return _series_or_404(db, series, filters)
+    return _series_or_404(db, series, filters, forecast_years)
 
 
 @router.get("/ranked/options", response_model=list[RankedOption], summary="Rankable selections")
@@ -171,10 +180,11 @@ def ranked(
     sex: str | None = Query(None),
     age: str | None = Query(None),
     year: int | None = Query(None, description="Default: the latest year available"),
+    forecast_years: int = Query(0, ge=0, le=10, description="Years to project; 0 disables"),
 ) -> dict:
     """Causes (excluding the 'All causes' total) or risks, highest value first."""
     filters = Filters(release, measure, metric, location, sex, age)
-    data = _read(queries.fetch_ranked, db, type, filters, year)
+    data = _read(queries.fetch_ranked, db, type, filters, year, forecast_years)
     if not data:
         raise HTTPException(status_code=404, detail="Nothing to rank for that selection")
     return data
@@ -186,26 +196,57 @@ def ranked(
     response_class=Response,
     responses={200: {"content": {"text/csv": {}}, "description": "CSV download"}},
 )
-def export_csv(db: DbPath, filters: Selection, series: SeriesParam = None) -> Response:
-    """Every dimension, the value and its uncertainty interval, for a series or a selection."""
+def export_csv(
+    db: DbPath,
+    filters: Selection,
+    series: SeriesParam = None,
+    forecast_years: int = Query(0, ge=0, le=10, description="Years to project; 0 disables"),
+) -> Response:
+    """Every dimension, value and interval, optionally followed by projected rows."""
     total, rows = _read(queries.fetch_estimates, db, filters, series_id=series)
     if not total:
         raise HTTPException(status_code=404, detail="No estimates for that selection")
 
+    fieldnames = EXPORT_COLUMNS
+    data = None
+    if forecast_years:
+        data = _series_or_404(db, series, filters, forecast_years)
+        fieldnames = [*EXPORT_COLUMNS, "record_type", "forecast_method"]
+        for row in rows:
+            row.update(record_type="observed", forecast_method="")
+        point_columns = {"year", "value", "lower", "upper"}
+        dimensions = {key: data.get(key) for key in EXPORT_COLUMNS if key not in point_columns}
+        rows.extend(
+            {
+                **dimensions,
+                **point,
+                "record_type": "forecast",
+                "forecast_method": data["forecast_info"]["model"],
+            }
+            for point in data["forecast"]
+        )
+
     buffer = io.StringIO()
-    writer = csv.DictWriter(buffer, fieldnames=EXPORT_COLUMNS, lineterminator="\n")
+    writer = csv.DictWriter(buffer, fieldnames=fieldnames, lineterminator="\n")
     writer.writeheader()
     writer.writerows(rows)
 
     if series:
-        filename = gbd.download_name(_series_or_404(db, series, Filters()), "csv")
+        data = data or _series_or_404(db, series, Filters())
+        filename = gbd.download_name(data, "csv")
     else:
         filename = f"gbd_{gbd.slugify(rows[0]['release'])}_estimates.csv"
     return Response(buffer.getvalue(), media_type="text/csv", headers=_attachment(filename))
 
 
-def _figure(db: Path, series: str | None, filters: Filters, fmt: Literal["png", "pdf"]) -> Response:
-    data = _series_or_404(db, series, filters)
+def _figure(
+    db: Path,
+    series: str | None,
+    filters: Filters,
+    fmt: Literal["png", "pdf"],
+    forecast_years: int = 0,
+) -> Response:
+    data = _series_or_404(db, series, filters, forecast_years)
     body = figures.render_series(data, _read(queries.fetch_meta, db), fmt)
     return Response(
         body, media_type=figures.MEDIA_TYPES[fmt], headers=_attachment(gbd.download_name(data, fmt))
@@ -218,9 +259,14 @@ def _figure(db: Path, series: str | None, filters: Filters, fmt: Literal["png", 
     response_class=Response,
     responses={200: {"content": {"image/png": {}}, "description": "PNG figure"}},
 )
-def figure_png(db: DbPath, filters: Selection, series: SeriesParam = None) -> Response:
+def figure_png(
+    db: DbPath,
+    filters: Selection,
+    series: SeriesParam = None,
+    forecast_years: int = Query(0, ge=0, le=10),
+) -> Response:
     """A citation-stamped chart with the uncertainty band, ready for slides."""
-    return _figure(db, series, filters, "png")
+    return _figure(db, series, filters, "png", forecast_years)
 
 
 @router.get(
@@ -229,6 +275,11 @@ def figure_png(db: DbPath, filters: Selection, series: SeriesParam = None) -> Re
     response_class=Response,
     responses={200: {"content": {"application/pdf": {}}, "description": "PDF figure"}},
 )
-def figure_pdf(db: DbPath, filters: Selection, series: SeriesParam = None) -> Response:
+def figure_pdf(
+    db: DbPath,
+    filters: Selection,
+    series: SeriesParam = None,
+    forecast_years: int = Query(0, ge=0, le=10),
+) -> Response:
     """The same figure as a vector PDF, for reports and print."""
-    return _figure(db, series, filters, "pdf")
+    return _figure(db, series, filters, "pdf", forecast_years)

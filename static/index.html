@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ireland Health Evidence | UCC School of Public Health</title>
+<title>Global Health Evidence | UCC School of Public Health</title>
+<meta name="description" content="A secure, multi-country Global Burden of Disease analysis platform from University College Cork, launching with Ireland.">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0f2942">
 <link rel="icon" href="assets/ucc-logo.png">
 <style>
   /* ------------------------------------------------------------------ *
@@ -431,6 +434,21 @@
     background: var(--surface-1); color: var(--text-primary);
     font-weight: 600; box-shadow: var(--shadow-sm);
   }
+  .btn.forecast {
+    border-color: color-mix(in srgb, var(--series-3) 42%, var(--border));
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn.forecast[aria-pressed="true"] {
+    color: #fff; background: #08785a; border-color: #08785a;
+    box-shadow: 0 4px 12px rgba(8,120,90,0.22);
+  }
+  .horizon-select { min-width: 92px; width: auto; padding: 9px 10px; }
+  .forecast-note {
+    margin: 10px 0 0; padding: 9px 12px; border-radius: 9px;
+    font-size: 12px; color: var(--text-secondary);
+    border: 1px solid color-mix(in srgb, var(--series-3) 28%, var(--border));
+    background: color-mix(in srgb, var(--series-3) 7%, var(--surface-1));
+  }
 
   /* ----------------------------------------------------------- tiles --- */
 
@@ -647,8 +665,8 @@
         <div class="brand-rule"></div>
         <div class="brand-text">
           <p class="eyebrow">School of Public Health</p>
-          <h1>Ireland Health Evidence</h1>
-          <p class="sub">Global Burden of Disease Study</p>
+          <h1>Global Health Evidence</h1>
+          <p class="sub">Multi-country GBD intelligence &middot; Ireland launch dataset</p>
         </div>
       </div>
 
@@ -709,6 +727,10 @@
         <p class="desc" id="trendDesc">Loading&hellip;</p>
       </div>
       <div class="card-actions">
+        <button class="btn forecast" id="trendForecast" aria-pressed="false" title="Add an exploratory projection">&#10022;&nbsp; Forecast</button>
+        <select class="horizon-select" id="trendHorizon" aria-label="Trend forecast horizon" title="Forecast horizon">
+          <option value="3">3 years</option><option value="5" selected>5 years</option><option value="10">10 years</option>
+        </select>
         <button class="btn" id="trendTableToggle" aria-pressed="false">Table view</button>
         <a class="btn" id="downloadCsv" href="#" download title="Every dimension, value and uncertainty interval">&#8595;&nbsp; CSV</a>
         <a class="btn" id="downloadPng" href="#" download title="Figure with GBD source and citation">&#8595;&nbsp; PNG</a>
@@ -720,6 +742,7 @@
       <canvas id="trendChart" role="img" aria-label="Line chart of the selected series, with its uncertainty interval"></canvas>
     </div>
     <div class="legend" id="trendLegend"></div>
+    <p class="forecast-note" id="trendForecastNote" hidden></p>
     <div class="table-wrap" id="trendTableWrap" hidden></div>
     <p class="source-note" id="trendSource"></p>
   </section>
@@ -732,6 +755,10 @@
         <p class="desc" id="rankDesc">Loading&hellip;</p>
       </div>
       <div class="card-actions">
+        <button class="btn forecast" id="rankForecast" aria-pressed="false" title="Project each ranked item from its own history">&#10022;&nbsp; Forecast</button>
+        <select class="horizon-select" id="rankHorizon" aria-label="Ranking forecast horizon" title="Forecast horizon">
+          <option value="3">3 years</option><option value="5" selected>5 years</option><option value="10">10 years</option>
+        </select>
         <div class="segmented" role="group" aria-label="Rank causes or risk factors">
           <button class="btn" id="btnCauses" aria-pressed="true">Top causes</button>
           <button class="btn" id="btnRisks" aria-pressed="false">Top risks</button>
@@ -744,6 +771,7 @@
       <canvas id="rankChart" role="img" aria-label="Horizontal bar chart of the leading causes or risk factors"></canvas>
     </div>
     <div class="table-wrap" id="rankTableWrap" hidden></div>
+    <p class="forecast-note" id="rankForecastNote" hidden></p>
     <p class="source-note" id="rankCaveat" hidden>
       Every cause in the loaded dataset is ranked together. GBD causes are hierarchical, so if an
       export mixes levels, a parent (e.g. &ldquo;Mental disorders&rdquo;) appears alongside its own
@@ -793,7 +821,7 @@
       </div>
     </div>
     <div class="foot-note">
-      <span>Ireland Health Evidence &mdash; UCC School of Public Health.</span>
+      <span>Global Health Evidence &mdash; UCC School of Public Health.</span>
       <span>Not for clinical or diagnostic use.</span>
     </div>
   </div>
@@ -1048,7 +1076,9 @@ const state = {
   catalogue: [],          // /api/series: every series and the years it covers
   rankOptions: [],        // /api/ranked/options: every rankable combination
   trendSel: {}, trendRange: {}, trendParams: {}, trend: null,
+  trendForecast: false, trendHorizon: 5,
   rankType: "causes", rankSel: {}, ranked: null,
+  rankForecast: false, rankHorizon: 5,
   tiles: null,
 };
 
@@ -1106,8 +1136,12 @@ const endLabelPlugin = {
   afterDatasetsDraw(chart) {
     const meta = chart.getDatasetMeta(0);
     if (!meta || !meta.data || !meta.data.length) return;
-    const last = meta.data[meta.data.length - 1];
-    const value = chart.data.datasets[0].data[chart.data.datasets[0].data.length - 1];
+    const values = chart.data.datasets[0].data;
+    let lastIndex = values.length - 1;
+    while (lastIndex >= 0 && values[lastIndex] === null) lastIndex -= 1;
+    if (lastIndex < 0) return;
+    const last = meta.data[lastIndex];
+    const value = values[lastIndex];
     const { ctx, chartArea } = chart;
     const text = fmt(value);
     ctx.save();
@@ -1298,7 +1332,11 @@ async function loadTrend(changed) {
   const entry = updateTrendFilters(changed);
   const { from, to } = state.trendRange;
   const whole = from === entry.years[0] && to === entry.years[entry.years.length - 1];
-  const params = { series: entry.series_id, ...(STATIC || whole ? {} : { year_from: from, year_to: to }) };
+  const params = {
+    series: entry.series_id,
+    ...(STATIC || whole ? {} : { year_from: from, year_to: to }),
+    ...(!STATIC && state.trendForecast ? { forecast_years: state.trendHorizon } : {}),
+  };
   try {
     state.trend = await fetchJSON("/api/trend" + qs(params));
     state.trendParams = params;
@@ -1314,19 +1352,32 @@ function drawTrend() {
   const color = css("--series-1");
   const surface = css("--surface-1");
   const k = data.display_scale;
-  const years = data.series.map((p) => p.year);
+  const forecast = data.forecast || [];
+  const observedYears = data.series.map((p) => p.year);
+  const years = [...observedYears, ...forecast.map((p) => p.year)];
   const values = data.series.map((p) => p.value * k);
   const lower = data.series.map((p) => scaled(p.lower, k));
   const upper = data.series.map((p) => scaled(p.upper, k));
+  const forecastValues = forecast.map((p) => p.value * k);
+  const forecastLower = forecast.map((p) => scaled(p.lower, k));
+  const forecastUpper = forecast.map((p) => scaled(p.upper, k));
   const band = data.has_uncertainty;
-  const span = years[0] === years[years.length - 1] ? years[0] : years[0] + "–" + years[years.length - 1];
+  const span = observedYears[0] === observedYears[observedYears.length - 1]
+    ? observedYears[0] : observedYears[0] + "–" + observedYears[observedYears.length - 1];
 
   $("trendTitle").textContent = data.title;
   $("trendDesc").textContent = describe(data) + " · " + span;
   $("trendLegend").innerHTML =
     '<span class="key" style="--accent:' + color + '"><i></i>Estimate</span>'
     + (band ? '<span class="key band" style="--accent:' + color + '"><i></i>95% uncertainty interval</span>'
-            : '<span class="key">No uncertainty interval in the source data</span>');
+            : '<span class="key">No uncertainty interval in the source data</span>')
+    + (forecast.length ? '<span class="key" style="--accent:' + css("--series-3")
+      + '"><i style="border-top:2px dashed currentColor;background:none"></i>Exploratory forecast</span>' : '');
+  const forecastNote = $("trendForecastNote");
+  forecastNote.hidden = !data.forecast_info;
+  if (data.forecast_info) forecastNote.textContent = data.forecast_info.status === "available"
+    ? data.forecast_info.model + " · approximate 95% prediction interval · " + data.forecast_info.note
+    : "Forecast unavailable: " + data.forecast_info.note;
   $("trendSource").textContent = "Unit: " + data.unit + ". " + data.release + ". " + servedFrom("/api/trend");
 
   // Every download carries the same selection, year range included.
@@ -1340,16 +1391,17 @@ function drawTrend() {
   // Table twin -- every value and interval readable without relying on the chart.
   $("trendTableWrap").innerHTML =
     "<table><caption>" + esc(data.title) + " &mdash; " + esc(describe(data)) + "</caption>"
-    + "<thead><tr><th>Year</th><th class='num'>Value</th>"
-    + (band ? "<th class='num'>Lower</th><th class='num'>Upper</th>" : "") + "</tr></thead><tbody>"
-    + years.map((y, i) => "<tr><td>" + y + "</td><td class='num'>" + fmt(values[i]) + "</td>"
-        + (band ? "<td class='num'>" + (lower[i] === null ? "&ndash;" : fmt(lower[i])) + "</td><td class='num'>"
-                + (upper[i] === null ? "&ndash;" : fmt(upper[i])) + "</td>" : "") + "</tr>").join("")
+    + "<thead><tr><th>Year</th><th>Type</th><th class='num'>Value</th><th class='num'>Lower</th><th class='num'>Upper</th></tr></thead><tbody>"
+    + data.series.map((p, i) => "<tr><td>" + p.year + "</td><td>Observed</td><td class='num'>" + fmt(values[i])
+        + "</td><td class='num'>" + (lower[i] === null ? "&ndash;" : fmt(lower[i])) + "</td><td class='num'>"
+        + (upper[i] === null ? "&ndash;" : fmt(upper[i])) + "</td></tr>").join("")
+    + forecast.map((p, i) => "<tr><td>" + p.year + "</td><td>Forecast</td><td class='num'>" + fmt(forecastValues[i])
+        + "</td><td class='num'>" + fmt(forecastLower[i]) + "</td><td class='num'>" + fmt(forecastUpper[i]) + "</td></tr>").join("")
     + "</tbody></table>";
 
   const datasets = [{
     label: data.title,
-    data: values,
+    data: [...values, ...forecast.map(() => null)],
     borderColor: color,
     backgroundColor: color + "1a",    // ~10% wash, only when there is no band
     borderWidth: 2,
@@ -1365,8 +1417,21 @@ function drawTrend() {
   if (band) {
     // Upper bound filled down to the lower bound ("+1"); gaps stay gaps.
     const bound = { borderWidth: 0, pointRadius: 0, pointHitRadius: 0, tension: 0.28, spanGaps: false };
-    datasets.push({ ...bound, label: "Upper", data: upper, fill: "+1", backgroundColor: color + "33" },
-                  { ...bound, label: "Lower", data: lower, fill: false });
+    datasets.push({ ...bound, label: "Upper", data: [...upper, ...forecast.map(() => null)], fill: "+1", backgroundColor: color + "33" },
+                  { ...bound, label: "Lower", data: [...lower, ...forecast.map(() => null)], fill: false });
+  }
+  if (forecast.length) {
+    const forecastColor = css("--series-3");
+    const prefix = data.series.map((_, i) => i === data.series.length - 1 ? values[i] : null);
+    datasets.push({
+      label: "Forecast", data: [...prefix, ...forecastValues], borderColor: forecastColor,
+      borderDash: [7, 5], borderWidth: 2, tension: 0.2, pointRadius: 4,
+      pointBackgroundColor: forecastColor, pointBorderColor: surface, pointBorderWidth: 2,
+    });
+    const gap = data.series.map(() => null);
+    const bound = { borderWidth: 0, pointRadius: 0, pointHitRadius: 0, tension: 0.2, spanGaps: false };
+    datasets.push({ ...bound, label: "Forecast upper", data: [...gap, ...forecastUpper], fill: "+1", backgroundColor: forecastColor + "24" },
+                  { ...bound, label: "Forecast lower", data: [...gap, ...forecastLower], fill: false });
   }
 
   if (trendChart) trendChart.destroy();
@@ -1382,13 +1447,18 @@ function drawTrend() {
       plugins: {
         legend: { display: false },       // the HTML legend names estimate and band
         tooltip: Object.assign(tooltipStyle(), {
-          filter: (item) => item.datasetIndex === 0,
+          filter: (item) => item.dataset.label === data.title
+            || (item.dataset.label === "Forecast" && item.dataIndex >= data.series.length),
           callbacks: {
             title: (items) => "Year " + items[0].label,
             label: (ctx) => {
-              const i = ctx.dataIndex;
-              return " " + fmt(values[i]) + " " + data.unit
-                + (lower[i] !== null ? "  (95% UI " + fmt(lower[i]) + "–" + fmt(upper[i]) + ")" : "");
+              const projected = ctx.dataset.label === "Forecast";
+              const i = projected ? ctx.dataIndex - data.series.length : ctx.dataIndex;
+              const value = projected ? forecastValues[i] : values[i];
+              const lo = projected ? forecastLower[i] : lower[i];
+              const hi = projected ? forecastUpper[i] : upper[i];
+              return " " + (projected ? "Forecast " : "") + fmt(value) + " " + data.unit
+                + (lo !== null ? "  (95% " + (projected ? "PI " : "UI ") + fmt(lo) + "–" + fmt(hi) + ")" : "");
             },
           },
         }),
@@ -1430,6 +1500,7 @@ async function loadRank() {
     $("rankFilters").innerHTML = "";
     $("rankTableWrap").innerHTML = "";
     $("rankCaveat").hidden = true;
+    $("rankForecastNote").hidden = true;
     $("rankTitle").textContent = state.rankType === "causes" ? "Leading causes" : "Leading risk factors";
     $("rankDesc").textContent = "Nothing in the loaded dataset can be ranked this way.";
     $("rankSource").textContent = "";
@@ -1442,7 +1513,9 @@ async function loadRank() {
     (dim, value) => { state.rankSel[dim] = dim === "year" ? Number(value) : value; loadRank(); });
   const option = match[0];
   try {
-    state.ranked = await fetchJSON("/api/ranked" + qs(Object.fromEntries(RANK_KEYS.map((k) => [k, option[k]]))));
+    const params = Object.fromEntries(RANK_KEYS.map((k) => [k, option[k]]));
+    if (!STATIC && state.rankForecast) params.forecast_years = state.rankHorizon;
+    state.ranked = await fetchJSON("/api/ranked" + qs(params));
     drawRank();
   } catch (e) {
     showStatus("Could not load that ranking: " + e.message, false);
@@ -1457,23 +1530,41 @@ function drawRank() {
   // each gets one slot, not a colour per bar.
   const color = causes ? css("--series-1") : css("--series-2");
   const k = data.display_scale;
-  const items = data.items.map((it) => ({ label: it.label, v: it.value * k, lo: scaled(it.lower, k), hi: scaled(it.upper, k) }));
+  const observedItems = data.items.map((it) => ({ label: it.label, v: it.value * k, lo: scaled(it.lower, k), hi: scaled(it.upper, k) }));
+  const projected = (data.forecast_items || []).map((it) => ({
+    label: it.label, v: it.value * k, lo: scaled(it.lower, k), hi: scaled(it.upper, k),
+  }));
+  const observedByLabel = Object.fromEntries(observedItems.map((it) => [it.label, it]));
+  const projectedByLabel = Object.fromEntries(projected.map((it) => [it.label, it]));
+  // When projected values exist, order the comparison by the projected rank.
+  const items = projected.length
+    ? projected.map((it) => observedByLabel[it.label]).filter(Boolean)
+    : observedItems;
   const ui = items.some((it) => it.lo !== null);
 
   $("rankCard").style.setProperty("--accent", color);
-  $("rankTitle").textContent = (causes ? "Leading causes, " : "Leading risk factors, ") + data.year;
+  $("rankTitle").textContent = (causes ? "Leading causes, " : "Leading risk factors, ") + data.year
+    + (projected.length ? " → " + data.forecast_year : "");
   $("rankDesc").textContent = "Ranked by " + describe({ ...data, title: null });
   $("rankCaveat").hidden = !causes;
+  const forecastNote = $("rankForecastNote");
+  forecastNote.hidden = !data.forecast_info;
+  if (data.forecast_info) forecastNote.textContent = data.forecast_info.status === "available"
+    ? data.forecast_info.model + " · projected to " + data.forecast_year + " · " + data.forecast_info.note
+    : "Forecast unavailable: " + data.forecast_info.note;
   $("rankSource").textContent = "Unit: " + data.unit + ". " + data.release + ". " + servedFrom("/api/ranked");
   $("rankChartWrap").style.height = Math.max(260, items.length * 30 + 70) + "px";
 
   $("rankTableWrap").innerHTML =
     "<table><caption>" + (causes ? "Leading causes" : "Leading risk factors") + " &mdash; "
     + esc(describe({ ...data, title: null })) + ", " + data.year + "</caption>"
-    + "<thead><tr><th>#</th><th>" + (causes ? "Cause" : "Risk factor") + "</th><th class='num'>Value</th>"
-    + (ui ? "<th class='num'>95% UI</th>" : "") + "</tr></thead><tbody>"
+    + "<thead><tr><th>" + (projected.length ? "Forecast rank" : "#") + "</th><th>" + (causes ? "Cause" : "Risk factor") + "</th><th class='num'>Observed " + data.year + "</th>"
+    + (projected.length ? "<th class='num'>Forecast " + data.forecast_year + "</th>" : "")
+    + (ui ? "<th class='num'>Observed 95% UI</th>" : "") + "</tr></thead><tbody>"
     + items.map((it, i) => "<tr><td>" + (i + 1) + "</td><td>" + esc(it.label) + "</td><td class='num'>"
-        + fmt(it.v) + "</td>" + (ui ? "<td class='num'>" + (it.lo === null ? "&ndash;"
+        + fmt(it.v) + "</td>" + (projected.length ? "<td class='num'>" + (projectedByLabel[it.label]
+          ? fmt(projectedByLabel[it.label].v) : "&ndash;") + "</td>" : "")
+        + (ui ? "<td class='num'>" + (it.lo === null ? "&ndash;"
         : fmt(it.lo) + "&ndash;" + fmt(it.hi)) + "</td>" : "") + "</tr>").join("")
     + "</tbody></table>";
 
@@ -1484,13 +1575,19 @@ function drawRank() {
     data: {
       labels: items.map((it) => it.label),
       datasets: [{
-        label: data.measure,
+        label: "Observed " + data.year,
         data: items.map((it) => it.v),
         backgroundColor: color,
         borderRadius: 4,          // rounded data-end
         borderSkipped: "start",   // square at the baseline
         barThickness: 18,         // <= 24px
-      }],
+      }, ...(projected.length ? [{
+        label: "Forecast " + data.forecast_year,
+        data: items.map((it) => projectedByLabel[it.label]?.v ?? null),
+        backgroundColor: css("--series-3") + "b8",
+        borderColor: css("--series-3"), borderWidth: 1, borderRadius: 4,
+        borderSkipped: "start", barThickness: 13,
+      }] : [])],
     },
     options: {
       indexAxis: "y",
@@ -1498,13 +1595,13 @@ function drawRank() {
       maintainAspectRatio: false,
       layout: { padding: { right: 18 } },
       plugins: {
-        legend: { display: false },
+        legend: { display: Boolean(projected.length), labels: { color: css("--text-secondary"), usePointStyle: true } },
         tooltip: Object.assign(tooltipStyle(), {
           callbacks: {
             label: (ctx) => {
-              const it = items[ctx.dataIndex];
+              const it = ctx.datasetIndex ? projectedByLabel[items[ctx.dataIndex].label] : items[ctx.dataIndex];
               return " " + fmt(it.v) + " " + data.unit
-                + (it.lo !== null ? "  (95% UI " + fmt(it.lo) + "–" + fmt(it.hi) + ")" : "");
+                + (it.lo !== null ? "  (95% " + (ctx.datasetIndex ? "PI " : "UI ") + fmt(it.lo) + "–" + fmt(it.hi) + ")" : "");
             },
           },
         }),
@@ -1556,12 +1653,12 @@ function renderApiList() {
   $("apiSection").hidden = STATIC;
   if (STATIC) return;
   const rows = [
-    ["/api/meta", "Release, import date, source files and checksums, citation"],
+    ["/api/meta", "Release, de-identified provenance, update date and citation"],
     ["/api/dimensions", "Values available for every dimension"],
     ["/api/series?measure=Deaths", "Catalogue of series, filterable by any dimension"],
-    ["/api/trend?series=…&year_from=2010", "One series with 95% uncertainty intervals"],
+    ["/api/trend?series=…&forecast_years=5", "Observed trend plus optional forecast"],
     ["/api/estimates?measure=…&age=…&sex=…", "Filtered rows, paged"],
-    ["/api/ranked?type=causes&measure=…", "Leading causes or risks"],
+    ["/api/ranked?type=causes&forecast_years=5", "Observed and forecast cause/risk ranking"],
     ["/api/export.csv?series=…", "CSV: every dimension, value and interval"],
     ["/api/figure.png?series=…", "PNG or PDF figure with GBD citation"],
     ["/docs", "Interactive documentation of every parameter"],
@@ -1574,9 +1671,11 @@ function renderApiList() {
 /* ---- provenance -------------------------------------------------------- */
 
 function renderProvenance(meta) {
+  const locations = [...new Set(state.catalogue.map((entry) => entry.location))];
+  const locationText = locations.length > 1 ? locations.length + " locations" : (locations[0] || "Ireland") + " launch dataset";
   $("chips").innerHTML =
       '<span class="chip place"><svg class="map-icon" aria-hidden="true" focusable="false">'
-    + '<use href="#ie-map"/></svg>Republic of Ireland</span>'
+    + '<use href="#ie-map"/></svg>' + esc(locationText) + '</span>'
     + (STATIC
         ? '<span class="chip"><span class="dot"></span>Snapshot ' + esc((meta.snapshot_built || "").slice(0, 10)) + "</span>"
         : '<span class="chip"><span class="dot live"></span>Live API</span>')
@@ -1589,8 +1688,8 @@ function renderProvenance(meta) {
     + "<span>" + meta.row_count.toLocaleString() + " estimates &middot; "
     + meta.series_count.toLocaleString() + " series &middot; " + meta.year_min + "&ndash;" + meta.year_max + "</span>"
     + "<span>Updated " + esc(fmtDate(meta.imported_at)) + " &middot; " + esc(meta.source) + "</span>"
-    + meta.source_files.map((f) => '<code title="' + esc(f.filename + " · " + f.row_count + " rows · sha256 " + f.sha256)
-        + '">' + esc(f.filename) + " &middot; sha256 " + esc(f.sha256.slice(0, 12)) + "&hellip;</code>").join("")
+    + meta.source_files.map((f) => '<code title="De-identified provenance · ' + f.row_count + ' rows">'
+        + esc(f.label) + " &middot; " + f.row_count.toLocaleString() + " rows</code>").join("")
     + (meta.prototype ? '<span class="flag" title="' + esc(meta.notice) + '">Prototype data &mdash; not for citation</span>' : "");
   $("footCitation").textContent = meta.citation;
 }
@@ -1624,6 +1723,7 @@ async function init() {
   try {
     [state.catalogue, state.rankOptions] = await Promise.all([
       fetchJSON("/api/series"), fetchJSON("/api/ranked/options")]);
+    renderProvenance(meta);
   } catch (e) {
     showStatus("Could not load the list of available series: " + e.message, false);
     return;
@@ -1643,6 +1743,24 @@ async function init() {
 
 $("btnCauses").addEventListener("click", () => setRankType("causes"));
 $("btnRisks").addEventListener("click", () => setRankType("risks"));
+$("trendForecast").addEventListener("click", () => {
+  state.trendForecast = !state.trendForecast;
+  $("trendForecast").setAttribute("aria-pressed", String(state.trendForecast));
+  loadTrend();
+});
+$("trendHorizon").addEventListener("change", (event) => {
+  state.trendHorizon = Number(event.target.value);
+  if (state.trendForecast) loadTrend();
+});
+$("rankForecast").addEventListener("click", () => {
+  state.rankForecast = !state.rankForecast;
+  $("rankForecast").setAttribute("aria-pressed", String(state.rankForecast));
+  loadRank();
+});
+$("rankHorizon").addEventListener("change", (event) => {
+  state.rankHorizon = Number(event.target.value);
+  if (state.rankForecast) loadRank();
+});
 
 init();
 </script>

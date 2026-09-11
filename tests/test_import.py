@@ -41,6 +41,26 @@ def _fingerprint(path: Path) -> str:
 
 
 class TestDimensionsAreKeptApart:
+    def test_multiple_countries_are_first_class_series_dimensions(
+        self, tmp_path, write_export, multidim_rows
+    ):
+        ireland = multidim_rows[:3]
+        france = [
+            {**row, "location_name": "France", "val": str(float(row["val"]) + 1)} for row in ireland
+        ]
+        source = write_export(tmp_path / "countries.csv", [*ireland, *france])
+        db = tmp_path / "countries.db"
+        import_dataset([source], release="GBD 2021", db_path=db)
+        with sqlite3.connect(db) as conn:
+            locations = {
+                row[0] for row in conn.execute("SELECT DISTINCT location FROM gbd_estimate")
+            }
+            series = conn.execute("SELECT COUNT(DISTINCT series_id) FROM gbd_estimate").fetchone()[
+                0
+            ]
+        assert locations == {"Ireland", "France"}
+        assert series == 2
+
     def test_every_input_row_becomes_exactly_one_estimate(self, multidim_db, multidim_export):
         with open(multidim_export, newline="") as handle:
             expected = sum(1 for _ in csv.DictReader(handle))
@@ -191,6 +211,16 @@ class TestDuplicateDetection:
 
 
 class TestValidation:
+    @pytest.mark.parametrize("sensitive", ["patient_id", "Email Address", "api-key", "MRN"])
+    def test_personal_or_credential_columns_are_refused(
+        self, tmp_path, write_export, multidim_rows, export_header, sensitive
+    ):
+        for row in multidim_rows:
+            row[sensitive] = "must-not-enter-the-pipeline"
+        path = write_export(tmp_path / "sensitive.csv", multidim_rows, [*export_header, sensitive])
+        with pytest.raises(ValidationError, match="prohibited person-level or credential"):
+            import_dataset([path], release="GBD 2021", db_path=tmp_path / "gbd.db")
+
     def test_missing_required_column_is_refused(
         self, tmp_path, write_export, multidim_rows, export_header
     ):

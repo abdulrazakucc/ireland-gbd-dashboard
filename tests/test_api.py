@@ -12,6 +12,7 @@ import csv
 import io
 import sqlite3
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app import gbd
@@ -31,8 +32,8 @@ class TestHealthAndMeta:
         assert body["imported_at"]
         assert body["row_count"] > 0 and body["series_count"] > 0
         (source,) = body["source_files"]
-        assert source["filename"] == "gbd_seed.csv"
-        assert len(source["sha256"]) == 64
+        assert source["label"] == "Approved source 1"
+        assert "filename" not in source and "sha256" not in source and "bytes" not in source
         assert source["row_count"] == body["row_count"]
         assert "GBD 2023" in body["citation"]
 
@@ -91,6 +92,23 @@ class TestSeries:
         assert response.status_code == 409
         assert "measure" in response.json()["detail"]["varying"]
 
+    def test_forecast_is_optional_bounded_and_transparent(self, multidim_client) -> None:
+        series = multidim_client.get("/api/series").json()[0]["series_id"]
+        observed = multidim_client.get("/api/trend", params={"series": series}).json()
+        assert observed["forecast"] == [] and observed["forecast_info"] is None
+
+        body = multidim_client.get(
+            "/api/trend", params={"series": series, "forecast_years": 5}
+        ).json()
+        assert [point["year"] for point in body["forecast"]] == list(range(2022, 2027))
+        assert body["forecast_info"]["status"] == "available"
+        assert body["forecast_info"]["training_points"] == 3
+        assert "not a clinical" in body["forecast_info"]["note"]
+        assert all(point["lower"] <= point["value"] <= point["upper"] for point in body["forecast"])
+
+    def test_forecast_horizon_is_limited(self, multidim_client) -> None:
+        assert multidim_client.get("/api/trend", params={"forecast_years": 11}).status_code == 422
+
 
 class TestRanked:
     def test_causes_are_ordered_high_to_low_without_the_all_causes_total(self, client) -> None:
@@ -117,6 +135,19 @@ class TestRanked:
 
     def test_invalid_type_is_rejected(self, client: TestClient) -> None:
         assert client.get("/api/ranked", params={"type": "wombats"}).status_code == 422
+
+    def test_ranking_can_include_projected_values(self, multidim_client) -> None:
+        options = multidim_client.get("/api/ranked/options", params={"type": "causes"}).json()
+        option = max(options, key=lambda item: item["year"])
+        params = {
+            key: option[key]
+            for key in ("type", "release", "measure", "metric", "location", "sex", "age", "year")
+        }
+        params["forecast_years"] = 3
+        body = multidim_client.get("/api/ranked", params=params).json()
+        assert body["forecast_year"] == option["year"] + 3
+        assert len(body["forecast_items"]) == len(body["items"])
+        assert body["forecast_info"]["status"] == "available"
 
 
 class TestCsvExport:
@@ -146,6 +177,20 @@ class TestCsvExport:
         response = client.get("/api/export.csv", params={"series": "does_not_exist"})
         assert response.status_code == 404
 
+    def test_forecast_export_labels_observed_and_projected_rows(self, multidim_client) -> None:
+        series = multidim_client.get("/api/series").json()[0]["series_id"]
+        response = multidim_client.get(
+            "/api/export.csv", params={"series": series, "forecast_years": 3}
+        )
+        rows = list(csv.DictReader(io.StringIO(response.text)))
+        assert {row["record_type"] for row in rows} == {"observed", "forecast"}
+        assert all(row["forecast_method"] == "" for row in rows if row["record_type"] == "observed")
+        assert all(
+            row["forecast_method"] == "Linear trend (ordinary least squares)"
+            for row in rows
+            if row["record_type"] == "forecast"
+        )
+
 
 class TestDashboard:
     def test_root_serves_the_dashboard_not_a_directory_listing(self, client: TestClient) -> None:
@@ -153,7 +198,7 @@ class TestDashboard:
         response = client.get("/")
         assert response.status_code == 200
         assert response.headers["content-type"].startswith("text/html")
-        assert "Ireland Health Evidence" in response.text
+        assert "Global Health Evidence" in response.text
 
     def test_assets_are_served(self, client: TestClient) -> None:
         for asset in ("assets/ucc-logo.png", "assets/zubair-kabir.png", "assets/chart.umd.js"):
@@ -175,3 +220,44 @@ class TestCors:
         other = app.get("/api/health", headers={"Origin": "https://elsewhere.example"})
         assert allowed.headers["access-control-allow-origin"] == "https://ucc.ie"
         assert "access-control-allow-origin" not in other.headers
+
+
+class TestSecurity:
+    def test_production_refuses_to_start_without_authentication(self, monkeypatch) -> None:
+        from app import config
+
+        monkeypatch.setattr(config, "ENVIRONMENT", "production")
+        monkeypatch.setattr(config, "AUTH_MODE", "off")
+        monkeypatch.setattr(config, "PROXY_SECRET", "")
+        with pytest.raises(RuntimeError, match="Production starts only"):
+            create_app()
+
+    def test_sensitive_responses_are_not_cached_and_have_browser_guards(self, client) -> None:
+        response = client.get("/api/meta")
+        assert response.headers["cache-control"] == "no-store"
+        assert response.headers["x-content-type-options"] == "nosniff"
+        assert response.headers["x-frame-options"] == "DENY"
+        assert response.headers["referrer-policy"] == "no-referrer"
+        assert "frame-ancestors 'none'" in response.headers["content-security-policy"]
+
+    def test_proxy_mode_fails_closed_except_for_health(self, seed_db, monkeypatch) -> None:
+        from app import config
+
+        monkeypatch.setattr(config, "AUTH_MODE", "proxy")
+        monkeypatch.setattr(config, "PROXY_SECRET", "unit-test-secret-that-is-long-enough")
+        app = TestClient(create_app(db_path=seed_db))
+        assert app.get("/api/health").status_code == 200
+        assert app.get("/api/meta").status_code == 401
+        authenticated = app.get(
+            "/api/meta",
+            headers={
+                "X-Forwarded-User": "approved-researcher",
+                "X-GBD-Proxy-Secret": "unit-test-secret-that-is-long-enough",
+            },
+        )
+        assert authenticated.status_code == 200
+
+    def test_database_errors_do_not_expose_server_paths(self, tmp_path) -> None:
+        missing = tmp_path / "private" / "research.db"
+        body = TestClient(create_app(db_path=missing)).get("/api/meta").json()
+        assert str(missing) not in body["detail"]

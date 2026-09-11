@@ -23,9 +23,7 @@ class Health(BaseModel):
 
 
 class SourceFileInfo(BaseModel):
-    filename: str
-    sha256: str
-    bytes: int
+    label: str = Field(description="Non-identifying source label")
     row_count: int
 
 
@@ -79,12 +77,27 @@ class Point(BaseModel):
     upper: float | None
 
 
+class ForecastInfo(BaseModel):
+    """Method and fitness information attached to every requested forecast."""
+
+    model: str
+    horizon: int
+    training_points: int
+    training_year_min: int | None
+    training_year_max: int | None
+    confidence_level: float
+    status: str
+    note: str
+
+
 class Trend(SeriesDims):
     """One series over time, with uncertainty intervals."""
 
     series_id: str
     has_uncertainty: bool
     series: list[Point] = Field(description="Ordered by year, ascending")
+    forecast: list[Point] = Field(default_factory=list, description="Projected annual points")
+    forecast_info: ForecastInfo | None = None
 
 
 class Dimensions(BaseModel):
@@ -153,3 +166,6 @@ class Ranked(RankedOption):
     """Leading causes or risk factors for one combination, highest value first."""
 
     items: list[RankedItem]
+    forecast_year: int | None = None
+    forecast_items: list[RankedItem] = Field(default_factory=list)
+    forecast_info: ForecastInfo | None = None

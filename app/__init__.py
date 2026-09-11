@@ -1,4 +1,4 @@
-"""Ireland Health Evidence -- the FastAPI application package.
+"""Global Health Evidence -- the FastAPI application package.
 
 Layout:
     config.py   every path and setting, resolved once

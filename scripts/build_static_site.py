@@ -61,7 +61,16 @@ def render_landing(page: str, app_url: str | None = None) -> str:
     """
     if app_url:
         parts = urlsplit(app_url.strip())
-        if parts.scheme not in ("http", "https") or not parts.netloc:
+        local_http = parts.scheme == "http" and parts.hostname in {"127.0.0.1", "localhost"}
+        if (
+            parts.scheme not in ("http", "https")
+            or not parts.netloc
+            or (parts.scheme != "https" and not local_http)
+            or parts.username
+            or parts.password
+            or parts.query
+            or parts.fragment
+        ):
             raise ValueError(f"--app-url must be an http(s) URL, got {app_url!r}")
         base = html.escape(app_url.strip().rstrip("/"), quote=True)
         page = re.sub(_BLOCK.format(tag="ACCESS:PENDING"), "", page, flags=re.S)

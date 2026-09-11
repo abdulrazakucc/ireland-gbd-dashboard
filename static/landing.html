@@ -3,8 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ireland Health Evidence | UCC School of Public Health</title>
-<meta name="description" content="Global Burden of Disease evidence for Ireland from the School of Public Health, University College Cork. Access to results is by approval.">
+<title>Global Health Evidence | UCC School of Public Health</title>
+<meta name="description" content="A secure multi-country Global Burden of Disease analysis platform from University College Cork, launching with Ireland. Access to results is by approval.">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0f2942">
+<meta property="og:title" content="Global Health Evidence">
+<meta property="og:description" content="Secure, transparent multi-country GBD intelligence from UCC, launching with Ireland.">
+<meta property="og:type" content="website">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'sha256-yp/+HY1ThCU1zk2LZ7Il+weAbs1hhXKm76ETe879Jog='; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <link rel="icon" href="assets/ucc-logo.png">
 <script>
   // Use the appearance a visitor chose in the dashboard, before first paint.
@@ -477,7 +483,7 @@
 
   .features {
     display: grid; gap: 16px; margin-bottom: 20px;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   }
   .feature {
     position: relative; overflow: hidden;
@@ -608,8 +614,8 @@
         <div class="brand-rule"></div>
         <div class="brand-text">
           <p class="eyebrow">School of Public Health</p>
-          <h1>Ireland Health Evidence</h1>
-          <p class="sub">Global Burden of Disease Study</p>
+          <h1>Global Health Evidence</h1>
+          <p class="sub">Multi-country GBD intelligence &middot; Ireland launch dataset</p>
         </div>
       </div>
 
@@ -631,12 +637,12 @@
 
     <div class="masthead-hero landing-hero">
       <div class="hero-figure">
-        <div class="hero-label">Global Burden of Disease &middot; Ireland</div>
-        <p class="lead">Trends, leading causes and risk factors for Ireland&rsquo;s health, with
-          their uncertainty intervals and citable downloads.</p>
+        <div class="hero-label">Global Burden of Disease &middot; Ireland launch dataset</div>
+        <p class="lead">Observed trends, leading causes, risk factors and transparent forecasts,
+          designed to expand across countries without compromising research governance.</p>
       </div>
       <div class="chips">
-        <span class="chip place"><svg class="map-icon" aria-hidden="true" focusable="false"><use href="#ie-map"/></svg>Republic of Ireland</span>
+        <span class="chip place"><svg class="map-icon" aria-hidden="true" focusable="false"><use href="#ie-map"/></svg>Ireland first &middot; global by design</span>
         <span class="chip"><span class="dot"></span>Access by approval</span>
         <span class="chip"><span class="dot"></span>Source: IHME GBD</span>
       </div>
@@ -649,20 +655,20 @@
 
   <section class="card intro" style="--accent: var(--series-1);" aria-labelledby="introTitle">
     <div>
-      <h2 id="introTitle"><span class="accent-bar"></span>Evidence on Ireland&rsquo;s health, from the Global Burden of Disease Study</h2>
-      <p>Ireland Health Evidence brings the Global Burden of Disease (GBD) estimates for Ireland,
-        published by the Institute for Health Metrics and Evaluation (IHME), together in one place:
-        how health, disease and risk factors have changed over time, and which causes and risks
-        weigh most on the population today.</p>
+      <h2 id="introTitle"><span class="accent-bar"></span>Global health evidence, built to grow responsibly</h2>
+      <p>Global Health Evidence brings Global Burden of Disease (GBD) estimates, published by the
+        Institute for Health Metrics and Evaluation (IHME), into one refined analytical workspace.
+        Ireland is the launch dataset; country is a first-class dimension throughout the pipeline,
+        ready for additional approved locations without redesigning the application.</p>
       <p>It is developed by the School of Public Health at University College Cork. Every figure
-        keeps its GBD release, uncertainty interval and source file, so it can be interpreted
+        keeps its GBD release, uncertainty interval and de-identified provenance, so it can be interpreted
         &mdash; and cited &mdash; with care.</p>
     </div>
     <aside class="access-panel" aria-labelledby="accessTitle">
       <span class="eyebrow-label">Access</span>
       <strong id="accessTitle">Results are available to approved users only.</strong>
-      <p>Create an account and tell us how you intend to use the data. Every request is reviewed
-        individually by the research team.</p>
+      <p>Access is authenticated outside the analytical application and reviewed by the research
+        team. The results service does not store user profiles or person-level research data.</p>
       <!-- ACCESS:LIVE -->
       <div class="cta">
         <a class="btn primary" href="register">Request access</a>
@@ -683,7 +689,7 @@
   <section class="features" aria-label="What the application provides">
     <article class="feature" style="--accent: var(--series-1);">
       <h3>Trends over time</h3>
-      <p>Follow any GBD measure for Ireland by cause, risk factor, metric, age and sex, with its
+      <p>Follow any GBD measure by country, cause, risk factor, metric, age and sex, with its
         95% uncertainty interval drawn around the estimate.</p>
     </article>
     <article class="feature" style="--accent: var(--series-2);">
@@ -692,14 +698,19 @@
         population group you choose.</p>
     </article>
     <article class="feature" style="--accent: var(--series-3);">
+      <h3>Optional forecasting</h3>
+      <p>Add a 3-, 5- or 10-year exploratory projection to trends and rankings, with prediction
+        intervals, model disclosure and a clear separation from observed evidence.</p>
+    </article>
+    <article class="feature" style="--accent: var(--series-4);">
       <h3>Citable downloads</h3>
       <p>Download the values behind every chart as CSV, or as PNG and PDF figures that carry the
         GBD release and the IHME citation.</p>
     </article>
-    <article class="feature" style="--accent: var(--series-4);">
-      <h3>Traceable to the source</h3>
-      <p>Every dataset records its GBD release, the files it was built from, with checksums, and
-        when it was last updated.</p>
+    <article class="feature" style="--accent: var(--series-2);">
+      <h3>Private by design</h3>
+      <p>Public pages contain no estimates. Source identifiers and checksums stay internal, while
+        imports containing person-level or credential fields are rejected automatically.</p>
     </article>
   </section>
 
@@ -711,9 +722,8 @@
       </div>
     </div>
     <ol class="steps">
-      <li><strong>Create an account</strong>Your name, email address, organisation and how you
-        intend to use the data.</li>
-      <li><strong>Confirm your email</strong>A link confirms that the address belongs to you.</li>
+      <li><strong>Request access</strong>Use the institution&rsquo;s secure access service to submit a request.</li>
+      <li><strong>Verify your identity</strong>Authentication is handled outside the results application.</li>
       <li><strong>Your request is reviewed</strong>A member of the research team reviews each
         request individually.</li>
       <li><strong>Start exploring</strong>Once approved, sign in to use the dashboard and download
@@ -733,11 +743,12 @@
         from it are marked as not for citation.</p>
     </div>
     <div>
-      <h3>Your information</h3>
-      <p>Registration asks for your name, email address, organisation and intended use, so that
-        access can be reviewed and managed.</p>
-      <p>A privacy notice setting out how this information is used, stored and deleted will be
-        published before registration opens.</p>
+      <h3>Privacy and governance</h3>
+      <p>The analytics pipeline accepts aggregate GBD exports only. It rejects common patient,
+        participant, contact, credential and direct-identifier fields before import.</p>
+      <p>The public GitHub Pages site contains no estimates, API configuration, source filenames,
+        checksums, credentials, logs or process identifiers. Production access fails closed unless
+        an identity-aware proxy is configured.</p>
     </div>
   </section>
 
@@ -768,7 +779,7 @@
       </div>
     </div>
     <div class="foot-note">
-      <span>Ireland Health Evidence &mdash; UCC School of Public Health.</span>
+      <span>Global Health Evidence &mdash; UCC School of Public Health.</span>
       <span>Not for clinical or diagnostic use.</span>
     </div>
   </div>

@@ -1,6 +1,6 @@
 # Runtime dependencies, pinned so every environment is identical.
 # Install with: make setup
-fastapi==0.115.0
-uvicorn[standard]==0.30.6
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
 pandas==2.2.2
 matplotlib==3.9.2    # PNG/PDF figure export (app/figures.py)

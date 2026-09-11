@@ -12,7 +12,7 @@ from dataclasses import dataclass, fields
 from pathlib import Path
 from typing import Any
 
-from app import gbd
+from app import forecast, gbd
 from app.db import query
 
 DIMENSIONS = ("release", "measure", "metric", "location", "sex", "age", "cause", "risk")
@@ -83,10 +83,14 @@ def _describe(row: dict[str, Any]) -> dict[str, Any]:
 
 def fetch_meta(db_path: Path | None = None) -> dict[str, Any]:
     meta = {r["key"]: r["value"] for r in query("SELECT key, value FROM meta", db_path=db_path)}
-    files = query(
-        "SELECT filename, sha256, bytes, row_count FROM source_file ORDER BY rowid",
+    private_files = query(
+        "SELECT row_count FROM source_file ORDER BY rowid",
         db_path=db_path,
     )
+    files = [
+        {"label": f"Approved source {index}", "row_count": item["row_count"]}
+        for index, item in enumerate(private_files, start=1)
+    ]
     release = meta.get("release", "")
     prototype = meta.get("source") == gbd.SEED_SOURCE
     return {
@@ -135,7 +139,11 @@ def resolve_series(db_path: Path | None, filters: Filters) -> str | None:
 
 
 def fetch_series(
-    db_path: Path | None, series_id: str, year_from: int | None = None, year_to: int | None = None
+    db_path: Path | None,
+    series_id: str,
+    year_from: int | None = None,
+    year_to: int | None = None,
+    forecast_years: int = 0,
 ) -> dict[str, Any] | None:
     """One series with its points and uncertainty intervals, or None."""
     where, params = Filters(year_from=year_from, year_to=year_to).where("series_id = ?")
@@ -148,11 +156,15 @@ def fetch_series(
     if not rows:
         return None
     head = _describe({d: rows[0][d] for d in DIMENSIONS})
+    observed = [{k: r[k] for k in ("year", "value", "lower", "upper")} for r in rows]
+    projected, forecast_info = forecast.forecast_points(observed, forecast_years, head["metric"])
     return {
         "series_id": series_id,
         **head,
         "has_uncertainty": any(r["lower"] is not None for r in rows),
-        "series": [{k: r[k] for k in ("year", "value", "lower", "upper")} for r in rows],
+        "series": observed,
+        "forecast": projected,
+        "forecast_info": forecast_info if forecast_years else None,
     }
 
 
@@ -218,7 +230,11 @@ def ranked_options(db_path: Path | None = None, rank_type: str | None = None) ->
 
 
 def fetch_ranked(
-    db_path: Path | None, rank_type: str, filters: Filters, year: int | None = None
+    db_path: Path | None,
+    rank_type: str,
+    filters: Filters,
+    year: int | None = None,
+    forecast_years: int = 0,
 ) -> dict[str, Any] | None:
     """Items ranked high to low for one combination; the latest year unless one is given.
 
@@ -248,6 +264,37 @@ def fetch_ranked(
     )
     if not items:
         return None
+    forecast_items = []
+    forecast_info = None
+    if forecast_years:
+        statuses = []
+        for item in items:
+            history = query(
+                "SELECT year, value, lower, upper FROM gbd_estimate "
+                "WHERE series_id = ? AND year <= ? ORDER BY year",
+                [item["series_id"], year],
+                db_path,
+            )
+            projected, info = forecast.forecast_points(history, forecast_years, combo["metric"])
+            statuses.append(info)
+            if projected:
+                point = projected[-1]
+                forecast_items.append(
+                    {"label": item["label"], "series_id": item["series_id"], **point}
+                )
+        forecast_items.sort(key=lambda item: (-item["value"], item["label"]))
+        available = [info for info in statuses if info["status"] == "available"]
+        forecast_info = dict(
+            available[0] if available else statuses[0],
+            status="available" if forecast_items else "unavailable",
+            note=(
+                "Each item is projected independently from its own recent trend; "
+                "ranking may change. "
+                "Exploratory only—not a clinical or epidemiological prediction."
+                if forecast_items
+                else f"At least {forecast.MIN_POINTS} annual observations per item are required."
+            ),
+        )
     return {
         "type": rank_type,
         **combo,
@@ -255,6 +302,9 @@ def fetch_ranked(
         "unit": gbd.unit_for(combo["metric"]),
         "display_scale": gbd.display_scale(combo["metric"]),
         "items": items,
+        "forecast_year": year + forecast_years if forecast_items else None,
+        "forecast_items": forecast_items,
+        "forecast_info": forecast_info,
     }
 
 

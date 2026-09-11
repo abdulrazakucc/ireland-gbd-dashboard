@@ -2,7 +2,7 @@
 
 # 🖥️ Install &amp; Run Guide
 
-### Ireland Health Evidence — for everyone, not just programmers
+### Global Health Evidence — for everyone, not just programmers
 
 **School of Public Health · University College Cork**
 
@@ -70,7 +70,7 @@ alternative, and what to do if something goes wrong.
 ## 📘 What you are about to install
 
 This project is a **dashboard** — a web page with charts of Global Burden of
-Disease indicators for Ireland. It runs **entirely on your own computer**. No
+Disease indicators across approved countries (launching with Ireland). It runs **entirely on your own computer**. No
 data leaves your machine, and you do not need an internet connection to use it
 once it is set up.
 
@@ -188,7 +188,7 @@ understand:
 | 3 | **Installs Python if needed** | Via **pyenv**, into `C:\Users\YourName\.pyenv`. **No admin rights, no system changes.** |
 | 4 | **Sets up and loads the data** | Creates the `.venv` workspace, installs the pinned components, builds the database. |
 | 5 | **Starts it and opens your browser** | Finds a free port if 8000 is busy. |
-| 6 | **Makes a Desktop shortcut** | Called **Ireland Health Evidence** — double-click it any time from now on. |
+| 6 | **Makes a Desktop shortcut** | Called **Global Health Evidence** — double-click it any time from now on. |
 
 > [!NOTE]
 > **Why does this need no admin rights?** Everything is written inside your own
@@ -720,7 +720,7 @@ You never repeat the installation.
 
 ### 🪟 Windows — double-click the Desktop shortcut
 
-# **Ireland Health Evidence**
+# **Global Health Evidence**
 
 </div>
 
@@ -827,7 +827,7 @@ happened.
 <br>
 
 Expected: the file came from the internet and is not signed by Microsoft.
-Click **More info**, check that it says *Ireland Health Evidence* or
+Click **More info**, check that it says *Global Health Evidence* or
 `Install.cmd`, then click **Run anyway**.
 
 If you would rather satisfy yourself first, `Install.cmd` and
@@ -1073,7 +1073,7 @@ That is the whole footprint. No admin rights needed to remove it either.
 
 <br>
 
-**Ireland Health Evidence** · School of Public Health, University College Cork
+**Global Health Evidence** · School of Public Health, University College Cork
 
 Principal Investigator — Dr. Zubair Kabir
 

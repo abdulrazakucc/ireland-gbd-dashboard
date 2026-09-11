@@ -44,7 +44,7 @@ class TestPublishesOnlyTheLandingPage:
 
     def test_the_page_introduces_the_application_and_its_access_rule(self, site: Path) -> None:
         page = (site / "index.html").read_text()
-        assert "Ireland Health Evidence" in page
+        assert "Global Health Evidence" in page
         assert "Results are available to approved users only." in page
         assert "How access works" in page
 
@@ -73,7 +73,17 @@ class TestAccessLinks:
         assert 'href="https://gbd.example.ucc.ie/login"' in page
         assert PENDING_TEXT not in page and "ACCESS:" not in page
 
-    @pytest.mark.parametrize("bad", ["javascript:alert(1)", "gbd.example.ucc.ie", "ftp://x"])
+    @pytest.mark.parametrize(
+        "bad",
+        [
+            "javascript:alert(1)",
+            "gbd.example.ucc.ie",
+            "ftp://x",
+            "http://gbd.example.ucc.ie",
+            "https://user:password@gbd.example.ucc.ie",
+            "https://gbd.example.ucc.ie?token=secret",
+        ],
+    )
     def test_an_application_url_must_be_a_web_address(self, bad: str) -> None:
         with pytest.raises(ValueError):
             render_landing(LANDING.read_text(), app_url=bad)

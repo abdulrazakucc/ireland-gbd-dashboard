@@ -66,6 +66,13 @@ class TestPdf:
 
 
 class TestContext:
+    def test_requested_forecast_is_drawn_and_disclaimed(self, multidim_client, lung_cancer_deaths):
+        body = multidim_client.get(
+            "/api/figure.png",
+            params={"series": lung_cancer_deaths, "forecast_years": 3},
+        ).content
+        assert b"Forecast" in body and b"not a clinical" in body
+
     def test_seed_data_figures_say_not_to_cite_them(self, client):
         series = client.get("/api/series").json()[0]["series_id"]
         body = client.get("/api/figure.png", params={"series": series}).content

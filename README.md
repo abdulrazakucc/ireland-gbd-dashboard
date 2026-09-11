@@ -1,12 +1,12 @@
 <div align="center">
 
-# Ireland Health Evidence
+# Global Health Evidence
 
-**A working ETL → API → dashboard pipeline for Global Burden of Disease indicators for Ireland**
+**A secure, multi-country ETL → API → dashboard pipeline for Global Burden of Disease indicators, launching with Ireland**
 
 School of Public Health · University College Cork · Cork, Ireland
 
-`Python 3.11+` · `FastAPI` · `SQLite` · `Docker` · `no build step`
+`Python 3.11+` · `FastAPI` · `SQLite` · `Docker` · `GitHub Pages` · `no frontend build step`
 
 **[Public landing page →](https://abdulrazakucc.github.io/ireland-gbd-dashboard/)** · results are available to approved users only
 
@@ -41,6 +41,7 @@ Senior Lecturer, School of Public Health, University College Cork.
 - [Configuration](#configuration)
 - [Troubleshooting](#troubleshooting)
 - [Data governance and attribution](#data-governance-and-attribution)
+- [Security policy](SECURITY.md)
 
 ---
 
@@ -75,6 +76,11 @@ make site-serve          # builds, then serves on http://127.0.0.1:8001
 To use the dashboard itself, run the application — see [Quick start](#quick-start).
 
 ## What this is
+
+Ireland is the first loaded dataset, not a hard-coded boundary. `location` is
+part of every series key, filter, ranking and export, so adding approved country
+files through the same ETL automatically adds them to the interface. Headline
+copy adapts to one or many loaded locations.
 
 Three pieces that fit together:
 
@@ -263,6 +269,7 @@ not there.
 |---|---|
 | `make test` | Run the test suite |
 | `make lint` | Check code style and formatting |
+| `make audit` | Check runtime dependencies for known vulnerabilities |
 | `make format` | Auto-fix formatting and import order |
 | `make smoke` | Check a **running** app answers on every endpoint |
 | `make check` | `lint` + `test` — exactly what CI runs |
@@ -405,7 +412,7 @@ port. The package is split by responsibility so each file has one job:
 | `db.py` | The database schema and its version, and opening connections. The importer that writes the format and the API that reads it share this one definition. |
 | `queries.py` | Every read the application makes. The routes, the figure renderer and the importer's verification step all call these, so a selection has exactly one answer wherever it is asked. |
 | `gbd.py` | GBD rules in one place: what each metric's unit is, how a value is scaled for display, and how a release is cited. |
-| `figures.py` | Renders one series as a PNG or PDF with its release, every dimension, the uncertainty band, the IHME citation, the source file and import date drawn on. Uses matplotlib's object API, never `pyplot`, which is not thread-safe. |
+| `figures.py` | Renders one series as a PNG or PDF with its release, every dimension, uncertainty, forecast disclosure, IHME citation, de-identified provenance and import date. Uses matplotlib's object API, never `pyplot`, which is not thread-safe. |
 | `schemas.py` | Pydantic models describing every response. They document the API at `/docs`, give the frontend a contract, and make a shape change fail loudly in tests. |
 | `routes.py` | The `/api` endpoints. Thin: each one is a query from `queries.py` plus HTTP error handling. |
 | `main.py` | Builds the application — middleware, routes, and the static mount. |
@@ -549,12 +556,12 @@ uncertainty interval (`lower`, `upper`). Start from what exists, then read it:
 | Endpoint | Returns |
 |---|---|
 | `GET /api/health` | Liveness check |
-| `GET /api/meta` | Release, import date, source files with row counts and SHA-256 checksums, citation |
+| `GET /api/meta` | Release, import date, de-identified source labels with row counts, citation |
 | `GET /api/dimensions` | The values available for every dimension, narrowed by any filters given |
 | `GET /api/series` | The catalogue: one entry per series (every dimension but year) and its years |
-| `GET /api/trend?series=ID` | One series over time, with `lower` and `upper` |
+| `GET /api/trend?series=ID` | One series over time, with intervals and optional forecast |
 | `GET /api/estimates` | Flat rows for any selection, paged with `limit` and `offset` |
-| `GET /api/ranked?type=causes\|risks` | Causes or risks ranked high to low for one selection |
+| `GET /api/ranked?type=causes\|risks` | Causes or risks ranked high to low, with optional projected ranking |
 | `GET /api/ranked/options` | Every selection a ranking can be drawn for |
 | `GET /api/export.csv` | CSV of a series or a selection: every dimension, value and interval |
 | `GET /api/figure.png`, `GET /api/figure.pdf` | A figure of one series with its GBD context and citation |
@@ -568,6 +575,7 @@ apply — life expectancy has neither.
 ```bash
 curl "http://127.0.0.1:8000/api/dimensions?measure=Deaths"
 curl "http://127.0.0.1:8000/api/trend?measure=Deaths&metric=Rate&age=Age-standardized&sex=Both&cause=Lung%20cancer&risk=&year_from=2010"
+curl "http://127.0.0.1:8000/api/trend?series=<series_id>&forecast_years=5"
 curl -o figure.pdf "http://127.0.0.1:8000/api/figure.pdf?series=<series_id>"
 ```
 
@@ -589,13 +597,21 @@ like with like.
 12%). The API reports a `display_scale` of 100 for them, which the dashboard and
 figures apply; CSV downloads keep the stored values.
 
+**Forecasts are opt-in.** Add `forecast_years=3`, `5`, or up to `10` to trend,
+ranking, CSV, PNG or PDF requests. The service fits a reproducible ordinary
+least-squares trend to up to the latest 15 observations, requires at least
+three distinct annual observations, and returns an approximate 95% prediction
+interval. Observed and projected values remain separate, and projections are
+never stored in the source database. They are exploratory analytical aids—not
+clinical predictions or replacements for an epidemiological model.
+
 **CORS is off by default.** The dashboard is same-origin, and notebooks, R and
 `curl` do not use CORS. If a separate web app must call the API from a browser,
 list its origin in `GBD_CORS_ORIGINS` — never `*`.
 
 ## The dashboard
 
-- **UCC identity** — logo and a map of the Republic of Ireland with Cork marked
+- **UCC identity** — logo and a map of the Ireland launch dataset with Cork marked
   on the left; principal investigator, linked to their UCC research profile, on
   the right.
 - **Hero figure and stat tiles** — life expectancy leads; healthy life
@@ -609,12 +625,17 @@ list its origin in `GBD_CORS_ORIGINS` — never `*`.
   offers values that still lead to real data, so no combination is a dead end.
 - **Uncertainty intervals** — the trend chart draws the 95% interval as a band
   wherever the source provides one; tooltips and table views give the bounds.
+- **Forecast controls on both analyses** — trends and rankings each offer an
+  explicit forecast switch and 3-, 5- or 10-year horizon. Dashed lines,
+  prediction intervals, table labels and method notes prevent projections from
+  being mistaken for observed estimates.
 - **Downloads** — CSV, PNG and PDF of exactly the current selection, year range
   included. Figures carry the release, every dimension, the IHME citation, the
-  source file and the import date. Figures of the prototype seed data say, on
+  de-identified source label and the import date. Figures of the prototype seed data say, on
   the figure, not to cite them.
-- **Provenance** — the release, last update, row count, source file and its
-  checksum sit above the charts; the IHME citation is in the footer.
+- **Provenance without disclosure** — the release, last update, row count and
+  non-identifying source label sit above the charts; original filenames, paths,
+  sizes and hashes stay internal to the database.
 - **Light and dark themes** — follows the operating system by default, with a
   toggle that remembers your choice.
 - **A table view on every chart** — the same data as an accessible table, so no
@@ -647,7 +668,7 @@ activate**:
 
 | Step | What happens |
 |---|---|
-| **Validate** | Required columns (`measure`, `metric`, `location`, `sex`, `age`, `year`, `val`) are present and unambiguous; every row has them; years and values are numbers; an interval has both `lower` and `upper`, with `lower` ≤ `upper`; `Percent` values are proportions. **One invalid row refuses the whole import**, naming the file and line: a silently skipped row would change a figure without anyone noticing. |
+| **Validate** | Required columns (`measure`, `metric`, `location`, `sex`, `age`, `year`, `val`) are present and unambiguous; every row has them; years and values are numbers; intervals are valid; `Percent` values are proportions. Common patient, participant, contact, credential and direct-identifier columns are prohibited. **One invalid row refuses the whole import.** |
 | **Detect duplicates** | Two rows for the same release, measure, metric, location, sex, age, cause, risk and year would overwrite one another. The import is refused, listing each duplicate, whether its copies are identical or conflicting, and the file and line of every copy. |
 | **Build** | A complete new database is written beside the live one, with its provenance: release, import time, source, row count, and each file's name, size, row count and SHA-256 checksum. |
 | **Verify** | SQLite integrity check, schema version, every row and file accounted for, and the series catalogue read back through the same queries the API uses. |
@@ -685,7 +706,7 @@ uses the project virtual environment rather than the system Python:
 ## Testing and code quality
 
 ```bash
-make check     # lint + tests, the same checks CI runs
+make check     # lint + tests + dependency audit, the same checks CI runs
 ```
 
 - **`make test`** — pytest. The API tests pin down every endpoint's contract:
@@ -730,9 +751,19 @@ One-time setup, already done: **Settings → Pages → Source: GitHub Actions**.
 The container runs as a **non-root user** and declares a **healthcheck**, so an
 orchestrator can tell readiness from "the process started".
 
-**Before exposing this beyond a trusted network**, add authentication — an API
-key or UCC SSO check in `app/main.py`. There is none today: every endpoint is
-public and read-only by design.
+Production access is fail-closed. With `GBD_ENV=production`, startup is refused
+unless `GBD_AUTH_MODE=proxy` and a proxy secret is configured—preferably through
+the mounted file named by `GBD_PROXY_SECRET_FILE`. An
+identity-aware reverse proxy must remove inbound authentication headers,
+authenticate the approved user, then set `X-Forwarded-User` and
+`X-GBD-Proxy-Secret` on the private upstream request. Keep the app port private
+to that proxy and terminate HTTPS there. API documentation is disabled in
+production by default.
+
+Every response also receives a restrictive content-security policy,
+anti-framing, MIME-sniffing, referrer and browser permissions headers; API
+responses use `Cache-Control: no-store`, and production adds HSTS. Uvicorn's
+version-bearing `Server` header is disabled in the supplied launch commands.
 
 ## Configuration
 
@@ -744,8 +775,16 @@ below is required to run the project.
 | `GBD_DATA_DIR` | `<repo>/data` | Directory holding the CSVs and the database |
 | `GBD_DB_PATH` | `<GBD_DATA_DIR>/gbd.db` | The SQLite database file |
 | `GBD_STATIC_DIR` | `<repo>/static` | Frontend files served at `/` |
+| `GBD_BIND_ADDRESS` | `127.0.0.1` | Host interface used by Docker; loopback prevents accidental LAN exposure |
 | `GBD_ROUND` | `GBD 2023` | Release for an import when neither `--release` nor the filename names one |
 | `GBD_CORS_ORIGINS` | *(none)* | Comma-separated browser origins allowed to call the API from another site |
+| `GBD_ENV` | `development` | Set `production` to enable fail-closed deployment checks and HSTS |
+| `GBD_TRUSTED_HOSTS` | localhost/test hosts | Allowed HTTP Host values |
+| `GBD_AUTH_MODE` | `off` | Set `proxy` for production identity-aware proxy authentication |
+| `GBD_PROXY_SECRET_FILE` | *(none)* | Preferred mounted file containing the proxy-to-app secret |
+| `GBD_PROXY_SECRET` | *(none)* | Non-container fallback; must be 32+ unpredictable characters, while a file avoids process/container inspection |
+| `GBD_AUTH_USER_HEADER` | `X-Forwarded-User` | Authenticated identity header set by the trusted proxy |
+| `GBD_EXPOSE_DOCS` | on locally, off in production | Enables `/docs` |
 
 To set any of them, copy `.env.example` to `.env`. `make run` and `make up` both
 read it; `.env` is git-ignored and never copied into the image.

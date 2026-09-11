@@ -13,7 +13,10 @@ services:
       # GBD_PORT lets a caller move the host-side port when 8000 is already
       # taken -- scripts/install.ps1 sets it automatically. Inside the
       # container the app is always on 8000.
-      - "${GBD_PORT:-8000}:8000"
+      # Loopback by default: a local research dataset is never exposed to the
+      # surrounding network accidentally. Production should also keep this
+      # upstream private to its authenticated reverse proxy.
+      - "${GBD_BIND_ADDRESS:-127.0.0.1}:${GBD_PORT:-8000}:8000"
     # Run as the user who owns ./data on the host. The data directory is a
     # bind mount, so the container writes gbd.db into a host directory whose
     # ownership the image cannot change. A mismatched UID makes that write
@@ -30,6 +33,13 @@ services:
       # Optional; set them in .env (see .env.example). Empty CORS = none.
       GBD_ROUND: ${GBD_ROUND:-GBD 2023}
       GBD_CORS_ORIGINS: ${GBD_CORS_ORIGINS:-}
+      GBD_ENV: ${GBD_ENV:-development}
+      GBD_TRUSTED_HOSTS: ${GBD_TRUSTED_HOSTS:-127.0.0.1,localhost}
+      GBD_AUTH_MODE: ${GBD_AUTH_MODE:-off}
+      GBD_AUTH_USER_HEADER: ${GBD_AUTH_USER_HEADER:-X-Forwarded-User}
+      # In production, mount a secret through an override and point this at it.
+      # A file avoids exposing the value in `docker inspect` output.
+      GBD_PROXY_SECRET_FILE: ${GBD_PROXY_SECRET_FILE:-}
     volumes:
       - ./data:/srv/data
       # Read-only: the dashboard is served, never written to. Mounting it means

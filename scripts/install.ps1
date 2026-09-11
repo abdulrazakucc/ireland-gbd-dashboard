@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    One-command setup for Ireland Health Evidence on Windows.
+    One-command setup for Global Health Evidence on Windows.
 
 .DESCRIPTION
     Installs everything this project needs and starts it, without ever
@@ -74,7 +74,7 @@ try {
 
 $RepoSlug   = 'abdulrazakucc/ireland-gbd-dashboard'
 $RepoZipUrl = "https://github.com/$RepoSlug/archive/refs/heads/main.zip"
-$AppName    = 'Ireland Health Evidence'
+$AppName    = 'Global Health Evidence'
 
 # Pandas 2.2.2 publishes wheels for CPython 3.9-3.12 only. On 3.13+ pip falls
 # back to building from source, which fails without a C toolchain -- so an

@@ -18,9 +18,11 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# Read the repository, mint the Pages deployment token. Nothing else.
+# Read the repository and its build artifact, then mint the Pages deployment
+# token. No repository write permission is granted.
 permissions:
   contents: read
+  actions: read
   pages: write
   id-token: write
 
@@ -35,9 +37,9 @@ jobs:
     name: Build the landing page
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12"
           cache: pip
@@ -72,11 +74,12 @@ jobs:
           fi
           echo "Verified: landing page only"
 
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
           path: site
+          include-hidden-files: true
 
   deploy:
     name: Publish
@@ -87,4 +90,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5

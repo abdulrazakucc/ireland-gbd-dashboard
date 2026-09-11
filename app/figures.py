@@ -4,7 +4,7 @@ Downloadable figures: one series as a PNG or PDF, with its GBD context attached.
 A figure leaves the dashboard and gets pasted into slides and reports, where
 nobody can see which selection produced it. So everything a reader needs to
 interpret and cite it is drawn *on* the figure -- release, every dimension,
-the uncertainty interval, the IHME citation, the source file and import date
+the uncertainty interval, the IHME citation, de-identified provenance and import date
 -- and repeated in the file's own metadata.
 
 Rendering uses matplotlib's object-oriented API and never ``pyplot``:
@@ -33,7 +33,7 @@ NAVY, LINE, TEXT, MUTED, GRID, ALERT = (
     "#e7e9ee",
     "#b3261e",
 )
-PUBLISHER = "Ireland Health Evidence, School of Public Health, University College Cork"
+PUBLISHER = "Global Health Evidence, School of Public Health, University College Cork"
 
 
 def format_number(value: float) -> str:
@@ -77,6 +77,11 @@ def render_series(
     # drawing a band nobody published.
     lower = [p["lower"] * scale if p["lower"] is not None else math.nan for p in points]
     upper = [p["upper"] * scale if p["upper"] is not None else math.nan for p in points]
+    projected = series.get("forecast", [])
+    forecast_years = [p["year"] for p in projected]
+    forecast_values = [p["value"] * scale for p in projected]
+    forecast_lower = [p["lower"] * scale for p in projected]
+    forecast_upper = [p["upper"] * scale for p in projected]
     subtitle = describe(series)
     citation = meta["citation"]
     generated = datetime.now(UTC).strftime("%Y-%m-%d")
@@ -107,6 +112,27 @@ def render_series(
             label="95% uncertainty interval",
         )
     ax.plot(years, values, color=LINE, linewidth=2, marker="o", markersize=4, label="Estimate")
+    if projected:
+        forecast_color = "#08785a"
+        ax.fill_between(
+            forecast_years,
+            forecast_lower,
+            forecast_upper,
+            color=forecast_color,
+            alpha=0.13,
+            linewidth=0,
+            label="Approx. 95% prediction interval",
+        )
+        ax.plot(
+            [years[-1], *forecast_years],
+            [values[-1], *forecast_values],
+            color=forecast_color,
+            linewidth=2,
+            linestyle="--",
+            marker="o",
+            markersize=4,
+            label="Exploratory forecast",
+        )
     ax.annotate(
         format_number(values[-1]),
         (years[-1], values[-1]),
@@ -132,10 +158,10 @@ def render_series(
         ax.spines[side].set_visible(False)
     for side in ("left", "bottom"):
         ax.spines[side].set_color("#cfd4dc")
-    if series["has_uncertainty"]:
+    if series["has_uncertainty"] or projected:
         ax.legend(loc="best", frameon=False, fontsize=8.5)
 
-    files = ", ".join(f["filename"] for f in meta["source_files"]) or "unknown file"
+    files = ", ".join(f["label"] for f in meta["source_files"]) or "approved source"
     dataset = (
         f"Dataset: {meta['source']} ({files}), {meta['release']}, "
         f"imported {meta['imported_at'][:10]}."
@@ -145,6 +171,11 @@ def render_series(
         *textwrap.wrap(dataset, 150),
         f"Figure: {PUBLISHER}. Generated {generated}.",
     ]
+    if projected:
+        footer.append(
+            "Forecast: linear least-squares trend; exploratory only, not a clinical or "
+            "epidemiological prediction."
+        )
     fig.text(
         0.07, 0.035, "\n".join(footer), fontsize=6.6, color=MUTED, va="bottom", linespacing=1.5
     )
@@ -165,7 +196,12 @@ def render_series(
             "Title": series["title"],
             "Description": subtitle,
             "Source": citation,
-            "Comment": dataset,
+            "Comment": dataset
+            + (
+                " Forecast: exploratory linear trend; not a clinical or epidemiological prediction."
+                if projected
+                else ""
+            ),
             "Software": PUBLISHER,
         }
         if meta.get("prototype"):

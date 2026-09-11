@@ -1,9 +1,9 @@
-# Ireland Health Evidence -- UCC School of Public Health
+# Global Health Evidence -- UCC School of Public Health
 #
 # One image serves both the dashboard and the API on port 8000.
 # Build and run it with:  make up
 
-FROM python:3.12-slim
+FROM python:3.12-slim@sha256:646fb0bca3dd3ea1bcc6feb72c17ed16eed6e10cffc732fcc1478bd3e7f02d7b
 
 # PYTHONDONTWRITEBYTECODE: no .pyc clutter in the image.
 # PYTHONUNBUFFERED:        logs appear immediately in `docker compose logs`.
@@ -44,4 +44,4 @@ sys.exit(0 if u.urlopen('http://127.0.0.1:8000/api/health', timeout=2).status ==
 
 # The entrypoint seeds the database on first start, then execs this command.
 ENTRYPOINT ["entrypoint.sh"]
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-server-header"]

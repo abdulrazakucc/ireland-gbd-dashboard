@@ -1,4 +1,4 @@
-# Ireland Health Evidence -- UCC School of Public Health
+# Global Health Evidence -- UCC School of Public Health
 #
 # Every command for this project lives here. Run `make` on its own to list them.
 #
@@ -18,6 +18,7 @@ PIP       := $(VENV)/bin/pip
 UVICORN   := $(VENV)/bin/uvicorn
 PYTEST    := $(VENV)/bin/pytest
 RUFF      := $(VENV)/bin/ruff
+PIP_AUDIT := $(VENV)/bin/pip-audit
 PORT      := 8000
 RUN_DIR   := .run
 DB        := data/gbd.db
@@ -26,7 +27,7 @@ SITE_DIR  := site
 SITE_PORT := 8001
 
 .PHONY: help setup setup-dev seed reseed run stop restart status smoke open logs \
-        test lint format check up down docker-restart docker-logs docker-ps \
+        test lint format audit check up down docker-restart docker-logs docker-ps \
         refresh clean distclean wait-api \
         dev install start urls doctor \
         site site-serve
@@ -45,7 +46,7 @@ wait-api:
 
 help: ## Show this help
 	@echo ""
-	@echo "  Ireland Health Evidence -- UCC School of Public Health"
+	@echo "  Global Health Evidence -- UCC School of Public Health"
 	@echo ""
 	@echo -e "  \033[1mNever run this before?  Type:  make dev\033[0m"
 	@echo "  That installs everything, loads the data, and opens the dashboard."
@@ -63,7 +64,7 @@ help: ## Show this help
 		| awk 'BEGIN{FS=":.*?## "}{printf "    \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 	@echo ""
 	@echo "  Quality checks:"
-	@grep -E '^(test|lint|format|smoke|check):.*## ' $(MAKEFILE_LIST) \
+	@grep -E '^(test|lint|format|audit|smoke|check):.*## ' $(MAKEFILE_LIST) \
 		| awk 'BEGIN{FS=":.*?## "}{printf "    \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 	@echo ""
 	@echo "  Publish to GitHub Pages:"
@@ -154,7 +155,7 @@ run: seed ## Start the app in the background
 	@mkdir -p $(RUN_DIR)
 	@echo "==> Starting app on :$(PORT)"
 	@nohup $(UVICORN) app.main:app $(if $(wildcard .env),--env-file .env,) \
-		--host 127.0.0.1 --port $(PORT) \
+		--host 127.0.0.1 --port $(PORT) --no-server-header \
 		> $(RUN_DIR)/app.log 2>&1 & echo $$! > $(RUN_DIR)/app.pid
 	@$(MAKE) --no-print-directory wait-api \
 		|| { echo "!! App did not start -- see $(RUN_DIR)/app.log"; exit 1; }
@@ -221,6 +222,9 @@ format: setup-dev ## Auto-fix formatting and import order
 	@$(RUFF) check --fix .
 	@$(RUFF) format .
 
+audit: setup-dev ## Check runtime dependencies for known vulnerabilities
+	@$(PIP_AUDIT) -r requirements.txt
+
 smoke: ## Check a RUNNING app answers on every endpoint
 	@echo "==> Smoke testing $(APP_URL)"
 	@series=$$(curl -sf --max-time 5 "$(APP_URL)/api/series" \
@@ -237,10 +241,14 @@ smoke: ## Check a RUNNING app answers on every endpoint
 		"/api/estimates?limit=5" \
 		"/api/ranked/options" \
 		"/api/trend?series=$$series" \
+		"/api/trend?series=$$series&forecast_years=3" \
 		"/api/export.csv?series=$$series" \
+		"/api/export.csv?series=$$series&forecast_years=3" \
 		"/api/figure.png?series=$$series" \
+		"/api/figure.png?series=$$series&forecast_years=3" \
 		"/api/figure.pdf?series=$$series" \
 		$${ranked:+"/api/ranked?$$ranked"} \
+		$${ranked:+"/api/ranked?$$ranked&forecast_years=3"} \
 		"/" ; do \
 		code=$$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$(APP_URL)$$path"); \
 		if [ "$$code" = "200" ]; then echo "    ok   $$code  $$path"; \
@@ -248,7 +256,7 @@ smoke: ## Check a RUNNING app answers on every endpoint
 	done; \
 	[ -z "$$fail" ] || exit 1
 
-check: lint test ## Run lint and tests -- what CI runs
+check: lint test audit ## Run lint, tests and security audit -- what CI runs
 
 ## ----------------------------------------------------------- publish ----
 

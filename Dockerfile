@@ -3,7 +3,7 @@
 # One image serves both the dashboard and the API on port 8000.
 # Build and run it with:  make up
 
-FROM python:3.12-slim@sha256:646fb0bca3dd3ea1bcc6feb72c17ed16eed6e10cffc732fcc1478bd3e7f02d7b
+FROM python:3.14-slim@sha256:cad9a2c871761c413caa6fdd6441c783451e740a48aaeba60ae62a8b53525ef6
 
 # PYTHONDONTWRITEBYTECODE: no .pyc clutter in the image.
 # PYTHONUNBUFFERED:        logs appear immediately in `docker compose logs`.

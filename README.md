@@ -17,8 +17,10 @@ School of Public Health · University College Cork · Cork, Ireland
 
 ---
 
-**Principal Investigator** — [Dr. Zubair Kabir](https://research.ucc.ie/en/persons/zubair-kabir/),
+**Principal Investigator and Public Health Lead** — [Dr. Zubair Kabir](https://research.ucc.ie/en/persons/zubair-kabir/),
 Senior Lecturer, School of Public Health, University College Cork.
+
+**Technical Lead, Lead Developer and Applied AI/Data Science Lead** — Abdul Razak, PhD.
 
 ---
 
@@ -26,6 +28,7 @@ Senior Lecturer, School of Public Health, University College Cork.
 
 - [GitHub Pages](#github-pages)
 - [What this is](#what-this-is)
+- [Research and Technical Leadership](#research-and-technical-leadership)
 - [Before you start](#before-you-start)
 - [Quick start](#quick-start)
 - [Accounts and sign-in](#accounts-and-sign-in)
@@ -118,6 +121,35 @@ GBD is actually published (see
 [What "live" honestly means](#what-live-honestly-means)).
 
 New to the project? You only need **one** command: `make dev`.
+
+## Research and Technical Leadership
+
+**Dr. Zubair Kabir — Principal Investigator and Public Health Lead**
+
+Provides the project's public-health leadership, GBD expertise, research
+direction, interpretation, data stewardship and institutional coordination.
+
+**Abdul Razak, PhD — Technical Lead, Lead Developer and Applied AI/Data Science Lead**
+
+Leads the end-to-end design and implementation of the software platform,
+including system architecture, data-ingestion and validation pipelines, API and
+dashboard development, statistical forecasting, secure-access controls,
+automated testing, reproducibility, technical documentation and deployment
+engineering. He also leads the planned development and validation of
+machine-learning forecasting and Bayesian decision-support capabilities.
+
+Machine-learning forecasting and Bayesian decision support are **planned work**
+and are not part of the current application, whose forecasts are exploratory
+linear trends. [CONTRIBUTORS.md](CONTRIBUTORS.md) describes both roles in more
+detail.
+
+### Authorship and citation
+
+Global Health Evidence is developed at the School of Public Health, University
+College Cork. To cite the software, use [CITATION.cff](CITATION.cff); GitHub
+also offers it as **Cite this repository** on the repository page. Cite the GBD
+estimates themselves with the IHME citation the application shows alongside
+the data and draws on every downloaded figure.
 
 ## Before you start
 
@@ -467,6 +499,8 @@ ireland-gbd-dashboard/
 ├── .env.example                  Optional settings; copy to .env (never committed)
 ├── .gitignore                    Build artefacts, licensed data and secrets stay out
 ├── .dockerignore                 Keeps the image small and clean
+├── CITATION.cff                  How to cite this software
+├── CONTRIBUTORS.md               Research and technical leadership roles
 ├── SECURITY.md                   Security and privacy policy
 └── README.md                     This file
 ```
@@ -960,5 +994,7 @@ under them.
 **Not for clinical or diagnostic use.**
 
 School of Public Health · University College Cork · Cork, Ireland
+
+Technical architecture, data science and application development led by Abdul Razak, PhD.
 
 </div>

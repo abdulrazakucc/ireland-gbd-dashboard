@@ -109,7 +109,7 @@ export function renderLogin(root, { source, onSignedIn, notice = "" }) {
       "div",
       { class: "login-pi" },
       h("img", { src: "../assets/zubair-kabir.png", alt: "" }),
-      h("div", {}, h("strong", {}, "Dr. Zubair Kabir"), h("span", {}, "Principal Investigator · University College Cork")),
+      h("div", {}, h("strong", {}, "Dr. Zubair Kabir"), h("span", {}, "Principal Investigator and Public Health Lead · University College Cork")),
     ),
   );
 

@@ -31,7 +31,7 @@ function coverSlide(meta, place) {
         h(
           "div",
           { class: "cover-meta" },
-          h("div", { class: "cover-person" }, h("img", { src: "../assets/zubair-kabir.png", alt: "" }), h("div", {}, h("strong", {}, "Dr. Zubair Kabir"), h("span", {}, "Principal Investigator"))),
+          h("div", { class: "cover-person" }, h("img", { src: "../assets/zubair-kabir.png", alt: "" }), h("div", {}, h("strong", {}, "Dr. Zubair Kabir"), h("span", {}, "Principal Investigator and Public Health Lead"))),
           h("span", {}, `${place} · ${meta.release}`),
           meta.prototype ? h("span", { class: "flag" }, "Prototype data · not for citation") : null,
         ),

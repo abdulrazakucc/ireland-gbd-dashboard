@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, please cite it using the metadata in this file.
+  Cite the Global Burden of Disease estimates themselves with the citation
+  required by the Institute for Health Metrics and Evaluation (IHME), which the
+  application shows alongside the data.
+title: Global Health Evidence
+type: software
+authors:
+  - given-names: Zubair
+    family-names: Kabir
+    affiliation: School of Public Health, University College Cork
+  - given-names: Abdul
+    family-names: Razak
+abstract: >-
+  A secure, multi-country pipeline and analysis application for Global Burden
+  of Disease indicators, launching with Ireland, developed at the School of
+  Public Health, University College Cork. Dr. Zubair Kabir is the Principal
+  Investigator and Public Health Lead. Abdul Razak, PhD, is the Technical Lead
+  and Lead Developer.
+repository-code: "https://github.com/abdulrazakucc/ireland-gbd-dashboard"
+keywords:
+  - Global Burden of Disease
+  - public health
+  - epidemiology
+  - data pipeline
+  - forecasting

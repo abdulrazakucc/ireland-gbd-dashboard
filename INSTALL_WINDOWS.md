@@ -1119,7 +1119,9 @@ That is the whole footprint. No admin rights needed to remove it either.
 
 **Global Health Evidence** · School of Public Health, University College Cork
 
-Principal Investigator — Dr. Zubair Kabir
+Principal Investigator and Public Health Lead — Dr. Zubair Kabir
+
+Technical Lead, Lead Developer and Applied AI/Data Science Lead — Abdul Razak, PhD
 
 For the technical documentation, see [README.md](README.md)
 

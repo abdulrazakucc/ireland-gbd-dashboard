@@ -8,7 +8,7 @@ person-level data.
 
 Do not open a public issue containing exploit details, credentials, private
 hostnames, or research data. Use the repository's private security-advisory
-workflow where available, or contact the research lead through the UCC profile
+workflow where available, or contact the principal investigator through the UCC profile
 linked in the README. Include only the minimum information needed to reproduce
 the problem and replace any real data with synthetic examples.
 

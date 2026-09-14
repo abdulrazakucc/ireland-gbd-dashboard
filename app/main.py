@@ -51,7 +51,8 @@ or rows with `/api/estimates`; download with `/api/export.csv`,
 `/api/figure.png` and `/api/figure.pdf`.
 
 Maintained by the School of Public Health, University College Cork.
-Principal Investigator: Dr. Zubair Kabir.
+Principal Investigator and Public Health Lead: Dr. Zubair Kabir.
+Technical Lead, Lead Developer and Applied AI/Data Science Lead: Abdul Razak, PhD.
 """
 
 

@@ -156,6 +156,15 @@ reseed: setup ## Replace the database with the seed data (keeps gbd.db.previous)
 
 run: seed ## Start the app in the background
 	@$(MAKE) --no-print-directory stop
+	@# Another program on the port would answer the health check in this app's
+	@# place, so refuse to start rather than report a start that did not happen.
+	@for i in 1 2 3 4 5 6 7 8 9 10; do \
+		lsof -nP -iTCP:$(PORT) -sTCP:LISTEN >/dev/null 2>&1 || exit 0; sleep 0.5; \
+	done; \
+	echo "!! Port $(PORT) is already in use by another program:"; \
+	lsof -nP -iTCP:$(PORT) -sTCP:LISTEN | awk 'NR>1 {print "     " $$1 " (pid " $$2 ")"}' | sort -u; \
+	echo "   Stop that program, or start this app on another port:  make run PORT=8010"; \
+	exit 1
 	@mkdir -p $(RUN_DIR)
 	@echo "==> Starting app on :$(PORT)"
 	@nohup $(UVICORN) app.main:app $(if $(wildcard .env),--env-file .env,) \
@@ -163,6 +172,8 @@ run: seed ## Start the app in the background
 		> $(RUN_DIR)/app.log 2>&1 & echo $$! > $(RUN_DIR)/app.pid
 	@$(MAKE) --no-print-directory wait-api \
 		|| { echo "!! App did not start -- see $(RUN_DIR)/app.log"; exit 1; }
+	@kill -0 $$(cat $(RUN_DIR)/app.pid) 2>/dev/null \
+		|| { echo "!! App did not start -- see $(RUN_DIR)/app.log"; tail -n 3 $(RUN_DIR)/app.log; exit 1; }
 	@echo ""
 	@echo "    Website    $(APP_URL)"
 	@echo "    App        $(APP_URL)/app/      (sign in here)"

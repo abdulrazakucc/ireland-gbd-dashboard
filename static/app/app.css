@@ -544,6 +544,7 @@ details.caveat p { margin: 8px 0 0; }
 .login-head { margin-bottom: 6px; }
 .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 8px; border-radius: 999px; font-size: 12px; font-weight: 650; color: var(--ucc-navy-2); background: color-mix(in srgb, var(--ucc-gold) 22%, var(--surface-1)); border: 1px solid color-mix(in srgb, var(--ucc-gold) 45%, transparent); }
 :root[data-theme="dark"] .badge { color: var(--ucc-gold-2); }
+@media (prefers-color-scheme: dark) { :root:where(:not([data-theme="light"])) .badge { color: var(--ucc-gold-2); } }
 .badge .icon { width: 14px; height: 14px; }
 .login-head h2 { margin: 14px 0 4px; font-size: 30px; font-weight: 760; letter-spacing: -0.03em; }
 .login-head p { margin: 0; color: var(--text-secondary); font-size: 14.5px; }

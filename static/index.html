@@ -520,13 +520,9 @@
   .two-col p { margin: 0 0 10px; font-size: 13.5px; line-height: 1.6; color: var(--text-secondary); }
   .two-col a { color: var(--series-1); }
 
-  /* Research and technical leadership: two equal cards, same structure and
-     weight, so each role reads with the same prominence. Sized below the
-     intro so leadership supports the research content rather than leading it. */
-  .leaders {
-    display: grid; gap: 16px; margin-bottom: 20px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  /* Research leadership: sized below the intro so leadership supports the
+     research content rather than leading it. */
+  .leaders { display: grid; gap: 16px; margin-bottom: 20px; }
   .leaders .card { margin: 0; display: flex; flex-direction: column; }
   .leader-head { display: flex; align-items: center; gap: 14px; }
   .leader-mark {
@@ -558,16 +554,21 @@
     font-size: 13px; line-height: 1.55; color: var(--text-secondary);
   }
   .leader-foot a { color: var(--series-1); white-space: nowrap; }
-  .tag-planned {
-    display: inline-block; margin-right: 7px; vertical-align: 1px;
-    font-size: 10px; font-weight: 750; letter-spacing: 0.08em; text-transform: uppercase;
-    padding: 1.5px 7px; border-radius: 6px; color: var(--text-primary);
-    background: rgba(237,161,0,0.16); border: 1px solid rgba(237,161,0,0.50);
+
+  /* Technical lead credit: a quiet strip at the foot of the page -- readable,
+     but deliberately lighter than the research content above it. */
+  .tech-credit {
+    display: flex; align-items: flex-start; gap: 12px; margin: 4px 0 20px;
+    padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border);
+    background: var(--surface-2);
   }
+  .tech-credit .leader-mark { width: 32px; height: 32px; border-radius: 9px; font-size: 11.5px; }
+  .tech-credit-name { margin: 0; font-size: 14px; font-weight: 650; line-height: 1.4; color: var(--text-primary); }
+  .tech-credit-name span { font-weight: 500; color: var(--text-secondary); }
+  .tech-credit p { margin: 3px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--text-muted); }
 
   @media (max-width: 860px) {
     .intro { grid-template-columns: 1fr; }
-    .leaders { grid-template-columns: 1fr; }
   }
 
   /* ---------------------------------------------------------- footer --- */
@@ -732,7 +733,7 @@
     </aside>
   </section>
 
-  <h2 class="section-title" id="leadershipTitle">Research and technical leadership</h2>
+  <h2 class="section-title" id="leadershipTitle">Research leadership</h2>
   <section class="leaders" aria-labelledby="leadershipTitle">
     <article class="card" style="--accent: var(--ucc-gold);" aria-labelledby="leadKabir">
       <div class="leader-head">
@@ -754,30 +755,6 @@
       </ul>
       <p class="leader-foot">Senior Lecturer, School of Public Health, University College Cork.
         <a href="https://research.ucc.ie/en/persons/zubair-kabir/" target="_blank" rel="noopener noreferrer">UCC research profile &#8599;</a></p>
-    </article>
-    <article class="card" style="--accent: var(--ucc-gold);" aria-labelledby="leadRazak">
-      <div class="leader-head">
-        <span class="leader-mark" aria-hidden="true">AR</span>
-        <div>
-          <h3 class="leader-name" id="leadRazak">Abdul Razak, PhD</h3>
-          <p class="leader-role">Technical Lead, Lead Developer and Applied AI/Data Science Lead</p>
-        </div>
-      </div>
-      <p class="leader-label">Responsible for</p>
-      <ul class="leader-areas">
-        <li>End-to-end technical architecture</li>
-        <li>GBD data ingestion and validation</li>
-        <li>API and dashboard engineering</li>
-        <li>Statistical forecasting</li>
-        <li>Secure researcher access</li>
-        <li>Software testing</li>
-        <li>Reproducibility</li>
-        <li>Technical documentation</li>
-        <li>Deployment engineering</li>
-      </ul>
-      <p class="leader-foot"><span class="tag-planned">Planned</span>Also leads the planned expansion
-        into machine-learning forecasting and Bayesian decision-support methods. This is future
-        work and is not part of the current application.</p>
     </article>
   </section>
 
@@ -852,6 +829,17 @@
       <p>The public site holds results only in encrypted form, opened in the browser after signing
         in, and no API configuration, source filenames, checksums, credentials or logs. Passwords
         are kept only as salted hashes, and production refuses to start without sign-in.</p>
+    </div>
+  </section>
+
+  <section class="tech-credit" aria-labelledby="leadRazak">
+    <span class="leader-mark" aria-hidden="true">AR</span>
+    <div>
+      <h3 class="tech-credit-name" id="leadRazak">Abdul Razak, PhD <span>&middot; Technical Lead, Lead Developer and Applied AI/Data Science Lead</span></h3>
+      <p>Technical architecture, GBD data ingestion and validation, API and dashboard engineering,
+        statistical forecasting, secure researcher access, testing, reproducibility, documentation
+        and deployment. Also leads planned future work on machine-learning forecasting and Bayesian
+        decision-support methods.</p>
     </div>
   </section>
 

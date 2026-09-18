@@ -3,6 +3,6 @@
 
 pytest==8.3.3
 httpx2==2.12.0         # transport used by fastapi.testclient
-ruff==0.6.9            # linter and formatter
+ruff==0.16.7            # linter and formatter
 pip-audit==2.10.1      # dependency vulnerability scan
 cryptography==50.0.1   # seals the GitHub Pages copy (scripts/build_static_site.py)
